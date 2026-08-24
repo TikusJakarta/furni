@@ -24,17 +24,18 @@
         <div class="container">
             <div class="row">
                 @foreach($products as $product)
-                <!-- Start Product Column -->
                 <div class="col-12 col-md-4 col-lg-3 mb-5">
-                    <a class="product-item" href="{{ url('/shop/item') }}">
-                        <img src="{{ asset($product->image) }}" class="img-fluid product-thumbnail" alt="{{ $product->name }}">
-                        <h3 class="product-title">{{ $product->name }}</h3>
-                        <strong class="product-price">${{ number_format($product->price, 2) }}</strong>
+                    <div class="product-item">
+                        <a href="{{ url('/shop/item') }}">
+                            <img src="{{ asset($product->image) }}" class="img-fluid product-thumbnail" alt="{{ $product->name }}">
+                            <h3 class="product-title">{{ $product->name }}</h3>
+                            <strong class="product-price">${{ number_format($product->price, 2) }}</strong>
+                        </a>
 
-                        <span class="icon-cross">
+                        <a href="{{ route('cart.add', $product->id) }}" class="icon-cross">
                             <img src="{{ asset('images/cross.svg') }}" class="img-fluid" alt="Cross">
-                        </span>
-                    </a>
+                        </a>
+                    </div>
                 </div> 
                 @endforeach
             </div>

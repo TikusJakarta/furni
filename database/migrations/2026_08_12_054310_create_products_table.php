@@ -11,14 +11,15 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->decimal('price', 10, 2)->nullable();
-            $table->string('image');
-            $table->text('description')->nullable();
-            $table->enum('type', ['main', 'popular'])->default('main'); 
-            $table->timestamps();
-        });
+    $table->id();
+    $table->string('name');
+    $table->decimal('price', 10, 2)->nullable();
+    $table->integer('stock')->default(0); // <-- TAMBAHKAN KOLOM INI
+    $table->string('image');
+    $table->text('description')->nullable();
+    $table->enum('type', ['main', 'popular'])->default('main'); 
+    $table->timestamps();
+});
     }
 
     /**

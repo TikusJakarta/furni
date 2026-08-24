@@ -12,9 +12,7 @@
                         <h1>{{ $settings['cart_hero_title'] ?? 'Cart' }}</h1>
                     </div>
                 </div>
-                <div class="col-lg-7">
-                    
-                </div>
+                <div class="col-lg-7"></div>
             </div>
         </div>
     </div>
@@ -22,7 +20,7 @@
 
     <div class="untree_co-section before-footer-section">
         <div class="container">
-            <form action="{{ route('cart.update') }}" method="POST">
+            <form id="cart-form" action="{{ route('cart.update') }}" method="POST">
                 @csrf
                 <div class="row mb-5">
                     <div class="col-md-12">
@@ -40,14 +38,16 @@
                                 </thead>
                                 <tbody>
                                     @forelse($cartItems ?? [] as $id => $item)
-                                    <tr>
+                                    <tr data-id="{{ $id }}">
                                         <td class="product-thumbnail">
                                             <img src="{{ asset($item['image']) }}" alt="{{ $item['name'] }}" class="img-fluid">
                                         </td>
                                         <td class="product-name">
                                             <h2 class="h5 text-black">{{ $item['name'] }}</h2>
                                         </td>
-                                        <td>${{ number_format($item['price'], 2) }}</td>
+                                        <td class="product-price-val" data-price="{{ $item['price'] }}">
+                                            ${{ number_format($item['price'], 2) }}
+                                        </td>
                                         <td>
                                             <div class="input-group mb-3 d-flex align-items-center quantity-container" style="max-width: 120px;">
                                                 <div class="input-group-prepend">
@@ -59,7 +59,9 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>${{ number_format($item['price'] * $item['quantity'], 2) }}</td>
+                                        <td class="product-row-total">
+                                            ${{ number_format($item['price'] * $item['quantity'], 2) }}
+                                        </td>
                                         <td><a href="{{ route('cart.remove', $id) }}" class="btn btn-black btn-sm">X</a></td>
                                     </tr>
                                     @empty
@@ -86,18 +88,6 @@
                                 <a href="{{ route('shop') }}" class="btn btn-outline-black btn-sm btn-block">Continue Shopping</a>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <label class="text-black h4" for="coupon">Coupon</label>
-                                <p>Enter your coupon code if you have one.</p>
-                            </div>
-                            <div class="col-md-8 mb-3 mb-md-0">
-                                <input type="text" class="form-control py-3" id="coupon" placeholder="Coupon Code">
-                            </div>
-                            <div class="col-md-4">
-                                <button type="button" class="btn btn-black">Apply Coupon</button>
-                            </div>
-                        </div>
                     </div>
                     <div class="col-md-6 pl-5">
                         <div class="row justify-content-end">
@@ -112,7 +102,7 @@
                                         <span class="text-black">Subtotal</span>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <strong class="text-black">${{ number_format($subtotal ?? 0, 2) }}</strong>
+                                        <strong class="text-black cart-subtotal">${{ number_format($subtotal ?? 0, 2) }}</strong>
                                     </div>
                                 </div>
                                 <div class="row mb-5">
@@ -120,7 +110,7 @@
                                         <span class="text-black">Total</span>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <strong class="text-black">${{ number_format($total ?? 0, 2) }}</strong>
+                                        <strong class="text-black cart-total">${{ number_format($total ?? 0, 2) }}</strong>
                                     </div>
                                 </div>
 
@@ -137,3 +127,7 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/cart.js') }}"></script>
+@endpush

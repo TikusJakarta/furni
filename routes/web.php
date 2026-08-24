@@ -6,7 +6,8 @@ use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\ServicesController;
 use App\Http\Controllers\BlogController;
-use App\Http\Controllers\CartController; // Tambahkan import CartController di sini
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
@@ -15,12 +16,13 @@ Route::get('/services', [ServicesController::class, 'index'])->name('services');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog');
 Route::get('/contact', function () { return view('contact'); })->name('contact');
 
-// Rute Cart yang dikelola oleh CartController
+// Rute Cart
 Route::get('/cart', [CartController::class, 'index'])->name('cart');
+Route::get('/cart/add/{id}', [CartController::class, 'add'])->name('cart.add'); 
 Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
 Route::get('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
-// Rute Checkout
-Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
 
 Route::get('/thankyou', function () { return view('thankyou'); })->name('thankyou');

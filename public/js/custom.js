@@ -23,10 +23,8 @@
 	};
 	tinyslider();
 
-	
-
-
 	var sitePlusMinus = function() {
+		if (document.getElementById('cart-form')) return;
 
 		var value,
     		quantity = document.getElementsByClassName('quantity-container');
@@ -47,9 +45,6 @@
 
 	    function increaseValue(event, quantityAmount) {
 	        value = parseInt(quantityAmount.value, 10);
-
-	        console.log(quantityAmount, quantityAmount.value);
-
 	        value = isNaN(value) ? 0 : value;
 	        value++;
 	        quantityAmount.value = value;
@@ -57,17 +52,13 @@
 
 	    function decreaseValue(event, quantityAmount) {
 	        value = parseInt(quantityAmount.value, 10);
-
 	        value = isNaN(value) ? 0 : value;
 	        if (value > 0) value--;
-
 	        quantityAmount.value = value;
 	    }
 	    
 	    init();
-		
 	};
 	sitePlusMinus();
 
-
-})()
+})();
