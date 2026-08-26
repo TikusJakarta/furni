@@ -22,32 +22,35 @@ class CartController extends Controller
         return view('cart', compact('settings', 'cartItems', 'subtotal', 'total'));
     }
 
-    public function add($id)
-{
-    $product = Product::findOrFail($id);
-    $cart = session()->get('cart', []);
+  public function add($id)
+    {
+        $product = Product::findOrFail($id);
+        $cart = session()->get('cart', []);
 
-    $currentQty = isset($cart[$id]) ? $cart[$id]['quantity'] + 1 : 1;
+        $currentQty = isset($cart[$id]) ? $cart[$id]['quantity'] + 1 : 1;
 
-    // Cek apakah kuantitas melebihi stok
-    if ($currentQty > $product->stock) {
-        return redirect()->back()->with('error', 'Stok produk tidak mencukupi.');
+        // Cek apakah kuantitas melebihi stok
+        if ($currentQty > $product->stock) {
+            return redirect()->back()->with('error', 'Stok produk tidak mencukupi.');
+        }
+
+        if (isset($cart[$id])) {
+            $cart[$id]['quantity'] = $currentQty;
+        } else {
+            $cart[$id] = [
+                "name" => $product->name,
+                "quantity" => 1,
+                "price" => $product->price,
+                "image" => $product->image
+            ];
+        }
+
+        session()->put('cart', $cart);
+        
+        return redirect()->route('shop')->with('success', 'Product added to cart successfully!');
+        
+        
     }
-
-    if (isset($cart[$id])) {
-        $cart[$id]['quantity'] = $currentQty;
-    } else {
-        $cart[$id] = [
-            "name" => $product->name,
-            "quantity" => 1,
-            "price" => $product->price,
-            "image" => $product->image
-        ];
-    }
-
-    session()->put('cart', $cart);
-    return redirect()->back()->with('success', 'Product added to cart successfully!');
-}
 
     // --- PERBARUI METHOD UPDATE INI ---
     public function update(Request $request)

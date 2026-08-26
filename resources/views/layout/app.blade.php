@@ -58,7 +58,14 @@
                 </ul>
 
                 <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
-                    <li><a class="nav-link" href="#"><img src="{{ asset('images/user.svg') }}" alt="User"></a></li>
+                    <li><a class="nav-link" href="{{ route('login') }}"><img src="{{ asset('images/user.svg') }}" alt="User"></a></li>
+                    @auth
+    <!-- Tombol Logout Darurat -->
+    <form action="{{ route('logout') }}" method="POST" class="d-inline">
+        @csrf
+        <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Logout</button>
+    </form>
+@endauth
                     <li><a class="nav-link" href="{{ route('cart') }}"><img src="{{ asset('images/cart.svg') }}"
                                 alt="Cart"></a></li>
                 </ul>

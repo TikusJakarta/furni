@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const qtyInput = row.querySelector('.quantity-amount');
             let currentQty = parseInt(qtyInput.value) || 1;
 
-            // Batasi minimal 1, tidak boleh turun ke 0
+            // Batasi minimal 1
             if (currentQty > 1) {
                 qtyInput.value = currentQty - 1;
                 recalculateRow(row);

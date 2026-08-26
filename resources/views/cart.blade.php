@@ -13,7 +13,7 @@
                     </div>
                 </div>
                 <div class="col-lg-7"></div>
-            </div>
+            </div>git s
         </div>
     </div>
     <!-- End Hero Section -->

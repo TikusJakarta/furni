@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
 {
-    // Menampilkan halaman checkout
     public function index()
     {
         $settings = Setting::pluck('value', 'key')->all();
@@ -24,9 +23,19 @@ class CheckoutController extends Controller
         return view('checkout', compact('settings', 'cartItems', 'subtotal', 'total'));
     }
 
-    // Memproses pesanan dan mengurangi stok di database
     public function process(Request $request)
     {
+        $request->validate([
+            'country'       => 'required|string',
+            'first_name'    => 'required|string|max:255',
+            'last_name'     => 'required|string|max:255',
+            'address'       => 'required|string',
+            'state_country' => 'required|string|max:255',
+            'postal_zip'    => 'required|string|max:20',
+            'email'         => 'required|email|max:255',
+            'phone'         => 'required|string|max:20',
+        ]);
+
         $cartItems = session()->get('cart', []);
 
         if (empty($cartItems)) {
@@ -36,24 +45,20 @@ class CheckoutController extends Controller
         DB::beginTransaction();
         try {
             foreach ($cartItems as $id => $item) {
-                // Ambil produk dan kunci barisnya untuk mencegah race condition
                 $product = Product::lockForUpdate()->find($id);
 
                 if (!$product) {
                     throw new \Exception("Produk '{$item['name']}' sudah tidak tersedia.");
                 }
 
-                // Validasi apakah stok mencukupi
                 if ($product->stock < $item['quantity']) {
                     throw new \Exception("Stok untuk produk '{$product->name}' tidak mencukupi. Sisa stok: {$product->stock}");
                 }
 
-                // Kurangi stok produk
                 $product->stock -= $item['quantity'];
                 $product->save();
             }
 
-            // Kosongkan keranjang setelah checkout berhasil
             session()->forget('cart');
             DB::commit();
 

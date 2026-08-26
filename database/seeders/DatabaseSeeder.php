@@ -107,6 +107,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
         PageSettingSeeder::class,
+        UserSeeder::class,
     ]);
     }
 }

@@ -30,6 +30,8 @@
                             <img src="{{ asset($product->image) }}" class="img-fluid product-thumbnail" alt="{{ $product->name }}">
                             <h3 class="product-title">{{ $product->name }}</h3>
                             <strong class="product-price">${{ number_format($product->price, 2) }}</strong>
+                            
+                            <span class="d-block text-muted small mt-1">Stock: {{ $product->stock }}</span>
                         </a>
 
                         <a href="{{ route('cart.add', $product->id) }}" class="icon-cross">
