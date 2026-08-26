@@ -21,7 +21,7 @@
     <div class="untree_co-section">
         <div class="container">
             
-            {{-- Notifikasi Error Umum --^^ --}}
+            {{-- Notifikasi Error Umum --}}
             @if(session('error'))
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
@@ -186,7 +186,7 @@
                         </div>
                     </div>
                     
-                    <!-- Kolom Kanan: Order Summary -->
+                    <!-- Kolom Kanan: Order Summary & Payment Methods -->
                     <div class="col-md-6">
                         <div class="row mb-5">
                             <div class="col-md-12">
@@ -220,6 +220,52 @@
                                             </tr>
                                         </tbody>
                                     </table>
+
+                                    <!-- Direct Bank Transfer -->
+                                    <div class="border p-3 mb-3">
+                                        <div class="form-check p-0">
+                                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_method" value="bank" id="bank" {{ old('payment_method') == 'bank' ? 'checked' : '' }} required>
+                                            <label class="form-check-label text-black font-weight-bold" for="bank" data-bs-toggle="collapse" href="#collapsebank" role="button" aria-expanded="false" aria-controls="collapsebank">
+                                                Direct Bank Transfer
+                                            </label>
+                                        </div>
+                                        <div class="collapse {{ old('payment_method') == 'bank' ? 'show' : '' }}" id="collapsebank">
+                                            <div class="py-2">
+                                                <p class="mb-0 text-muted small">Make your payment directly into our bank account. Please use your Order ID as the payment reference.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Cheque Payment -->
+                                    <div class="border p-3 mb-3">
+                                        <div class="form-check p-0">
+                                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_method" value="cheque" id="cheque" {{ old('payment_method') == 'cheque' ? 'checked' : '' }}>
+                                            <label class="form-check-label text-black font-weight-bold" for="cheque" data-bs-toggle="collapse" href="#collapsecheque" role="button" aria-expanded="false" aria-controls="collapsecheque">
+                                                Cheque Payment
+                                            </label>
+                                        </div>
+                                        <div class="collapse {{ old('payment_method') == 'cheque' ? 'show' : '' }}" id="collapsecheque">
+                                            <div class="py-2">
+                                                <p class="mb-0 text-muted small">Please send your cheque to Store Name, Store Street, Store Town, Store State.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Paypal -->
+                                    <div class="border p-3 mb-5">
+                                        <div class="form-check p-0">
+                                            <input class="form-check-input ms-0 me-2" type="radio" name="payment_method" value="paypal" id="paypal" {{ old('payment_method') == 'paypal' ? 'checked' : '' }}>
+                                            <label class="form-check-label text-black font-weight-bold" for="paypal" data-bs-toggle="collapse" href="#collapsepaypal" role="button" aria-expanded="false" aria-controls="collapsepaypal">
+                                                Paypal
+                                            </label>
+                                        </div>
+                                        <div class="collapse {{ old('payment_method') == 'paypal' ? 'show' : '' }}" id="collapsepaypal">
+                                            <div class="py-2">
+                                                <p class="mb-0 text-muted small">Pay via PayPal; you can pay with your credit card if you don't have a PayPal account.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @error('payment_method') <small class="text-danger d-block mb-3">{{ $message }}</small> @enderror
 
                                     <div class="form-group">
                                         <button type="submit" class="btn btn-black btn-lg py-3 btn-block w-100" @if(empty($cartItems)) disabled @endif>Place Order</button>

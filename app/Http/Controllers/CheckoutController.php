@@ -26,14 +26,15 @@ class CheckoutController extends Controller
     public function process(Request $request)
     {
         $request->validate([
-            'country'       => 'required|string',
-            'first_name'    => 'required|string|max:255',
-            'last_name'     => 'required|string|max:255',
-            'address'       => 'required|string',
-            'state_country' => 'required|string|max:255',
-            'postal_zip'    => 'required|string|max:20',
-            'email'         => 'required|email|max:255',
-            'phone'         => 'required|string|max:20',
+            'country'        => 'required|string',
+            'first_name'     => 'required|string|max:255',
+            'last_name'      => 'required|string|max:255',
+            'address'        => 'required|string',
+            'state_country'  => 'required|string|max:255',
+            'postal_zip'     => 'required|string|max:20',
+            'email'          => 'required|email|max:255',
+            'phone'          => 'required|string|max:20',
+            'payment_method' => 'required|in:bank,cheque,paypal',
         ]);
 
         $cartItems = session()->get('cart', []);
@@ -66,7 +67,7 @@ class CheckoutController extends Controller
         
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', $e->getMessage());
+            return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
 }

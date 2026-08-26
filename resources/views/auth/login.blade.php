@@ -1,6 +1,6 @@
 @extends('layout.app')
 
-@section('title', 'Login - Furni')
+@section('title', $settings['login_page_title'] ?? 'Login - Furni')
 
 @section('content')
     <!-- Start Hero Section -->
@@ -9,7 +9,7 @@
             <div class="row justify-content-between">
                 <div class="col-lg-5">
                     <div class="intro-excerpt">
-                        <h1>Login</h1>
+                        <h1>{{ $settings['login_hero_title'] ?? 'Login' }}</h1>
                     </div>
                 </div>
                 <div class="col-lg-7"></div>
@@ -27,30 +27,45 @@
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
-                    @if($errors->any())
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
+                    @if(session('error'))
+                        <div class="alert alert-danger">{{ session('error') }}</div>
                     @endif
 
-                    <form action="{{ route('login.process') }}" method="POST">
-                        @csrf
-                        <div class="form-group mb-3">
-                            <label class="text-black" for="email">Email address</label>
-                            <input type="email" class="form-control" id="email" name="email" value="{{ old('email') }}" required>
-                        </div>
+                    <div class="p-3 p-lg-5 border bg-white rounded shadow-sm">
+                        <form action="{{ route('login.process') }}" method="POST">
+                            @csrf
+                            
+                            <div class="form-group mb-3">
+                                <label class="text-black" for="email">Email address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required>
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                        <div class="form-group mb-3">
-                            <label class="text-black" for="password">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
+                            <div class="form-group mb-3">
+                                <label class="text-black" for="password">Password <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
+                                @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
 
-                        <button type="submit" class="btn btn-primary-hover-outline btn-block py-3 mt-3">Login</button>
-                    </form>
+                            <div class="form-group mb-4 d-flex justify-content-between align-items-center">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="remember" name="remember" {{ old('remember') ? 'checked' : '' }}>
+                                    <label class="form-check-label text-black" for="remember">Remember me</label>
+                                </div>
+                                <a href="#">Forgot password?</a>
+                            </div>
+
+                            <button type="submit" class="btn btn-black btn-lg py-3 btn-block w-100">Login</button>
+                        </form>
+
+                        <div class="text-center mt-4">
+                             <p class="mb-0">Don't have an account? <a href="#">Sign Up</a></p> 
+                        </div>
+                    </div>
 
                 </div>
             </div>
