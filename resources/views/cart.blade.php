@@ -13,7 +13,7 @@
                     </div>
                 </div>
                 <div class="col-lg-7"></div>
-            </div>git s
+            </div>
         </div>
     </div>
     <!-- End Hero Section -->
@@ -46,7 +46,7 @@
                                             <h2 class="h5 text-black">{{ $item['name'] }}</h2>
                                         </td>
                                         <td class="product-price-val" data-price="{{ $item['price'] }}">
-                                            ${{ number_format($item['price'], 2) }}
+                                            Rp {{ number_format($item['price'], 0, ',', '.') }}
                                         </td>
                                         <td>
                                             <div class="input-group mb-3 d-flex align-items-center quantity-container" style="max-width: 120px;">
@@ -60,7 +60,7 @@
                                             </div>
                                         </td>
                                         <td class="product-row-total">
-                                            ${{ number_format($item['price'] * $item['quantity'], 2) }}
+                                            Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
                                         </td>
                                         <td><a href="{{ route('cart.remove', $id) }}" class="btn btn-black btn-sm">X</a></td>
                                     </tr>
@@ -102,7 +102,7 @@
                                         <span class="text-black">Subtotal</span>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <strong class="text-black cart-subtotal">${{ number_format($subtotal ?? 0, 2) }}</strong>
+                                        <strong class="text-black cart-subtotal">Rp {{ number_format($subtotal ?? 0, 0, ',', '.') }}</strong>
                                     </div>
                                 </div>
                                 <div class="row mb-5">
@@ -110,7 +110,7 @@
                                         <span class="text-black">Total</span>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <strong class="text-black cart-total">${{ number_format($total ?? 0, 2) }}</strong>
+                                        <strong class="text-black cart-total">Rp {{ number_format($total ?? 0, 0, ',', '.') }}</strong>
                                     </div>
                                 </div>
 

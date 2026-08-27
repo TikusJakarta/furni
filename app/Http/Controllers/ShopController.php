@@ -12,7 +12,15 @@ class ShopController extends Controller
     {
         $settings = Setting::pluck('value', 'key')->all();
         $products = Product::all();
-        
+
         return view('shop', compact('settings', 'products'));
+    }
+
+    public function show($id)
+    {
+        $product = Product::findOrFail($id);
+        $settings = Setting::pluck('value', 'key')->all();
+
+        return view('product-detail', compact('product', 'settings'));
     }
 }

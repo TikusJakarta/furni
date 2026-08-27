@@ -756,3 +756,40 @@ textarea {
 .testimonial-slider-wrap #testimonial-nav .next {
     right: -25px !important;
 }
+
+/* Styling Tombol Qty & Add to Cart di Modal */
+.modal-qty-group {
+    width: 140px;
+    height: 45px;
+}
+
+.modal-qty-btn {
+    border-color: #ced4da !important;
+    color: #212529 !important;
+    background-color: #f8f9fa !important;
+    height: 45px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.modal-qty-group .decrease {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.modal-qty-group .increase {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.modal-qty-input {
+    border-color: #ced4da !important;
+    height: 45px;
+    font-weight: 600;
+}
+
+.modal-submit-btn {
+    height: 45px;
+    border-radius: 6px;
+    font-weight: 600;
+}

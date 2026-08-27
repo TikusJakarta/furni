@@ -8,7 +8,7 @@ use App\Models\Product;
 use App\Models\Feature;
 use App\Models\Testimonial;
 use App\Models\BlogPost;
-use App\Models\Team; // <-- Jangan lupa import model Team
+use App\Models\Team;
 
 class DatabaseSeeder extends Seeder
 {
@@ -25,14 +25,14 @@ class DatabaseSeeder extends Seeder
 
         // Produk Utama (3 Produk Section Pertama di Home)
         Product::insert([
-            ['name' => 'Nordic Chair', 'price' => 50.00, 'image' => 'images/product-1.png', 'description' => 'Crafted with excellent material.', 'type' => 'main'],
-            ['name' => 'Kruzo Aero Chair', 'price' => 78.00, 'image' => 'images/product-2.png', 'description' => 'Crafted with excellent material.', 'type' => 'main'],
-            ['name' => 'Ergonomic Chair', 'price' => 43.00, 'image' => 'images/product-3.png', 'description' => 'Crafted with excellent material.', 'type' => 'main'],
-            
+            ['name' => 'Nordic Chair', 'price' => 750000, 'weight' => 5000, 'stock' => 10, 'image' => 'images/product-1.png', 'description' => 'Crafted with excellent material.', 'type' => 'main'],
+            ['name' => 'Kruzo Aero Chair', 'price' => 1170000, 'weight' => 7000, 'stock' => 5, 'image' => 'images/product-2.png', 'description' => 'Crafted with excellent material.', 'type' => 'main'],
+            ['name' => 'Ergonomic Chair', 'price' => 645000, 'weight' => 6000, 'stock' => 8, 'image' => 'images/product-3.png', 'description' => 'Crafted with excellent material.', 'type' => 'main'],
+
             // Produk Samping Kanan (Popular Products)
-            ['name' => 'Nordic Chair', 'price' => 50.00, 'image' => 'images/product-1.png', 'description' => 'Donec facilisis quam ut purus rutrum lobortis. Donec vitae odio', 'type' => 'popular'],
-            ['name' => 'Kruzo Aero Chair', 'price' => 78.00, 'image' => 'images/product-2.png', 'description' => 'Donec facilisis quam ut purus rutrum lobortis. Donec vitae odio', 'type' => 'popular'],
-            ['name' => 'Ergonomic Chair', 'price' => 43.00, 'image' => 'images/product-3.png', 'description' => 'Donec facilisis quam ut purus rutrum lobortis. Donec vitae odio', 'type' => 'popular'],
+            ['name' => 'Nordic Chair', 'price' => 750000, 'weight' => 5000, 'stock' => 10, 'image' => 'images/product-1.png', 'description' => 'Donec facilisis quam ut purus rutrum lobortis.', 'type' => 'popular'],
+            ['name' => 'Kruzo Aero Chair', 'price' => 1170000, 'weight' => 7000, 'stock' => 5, 'image' => 'images/product-2.png', 'description' => 'Donec facilisis quam ut purus rutrum lobortis.', 'type' => 'popular'],
+            ['name' => 'Ergonomic Chair', 'price' => 645000, 'weight' => 6000, 'stock' => 8, 'image' => 'images/product-3.png', 'description' => 'Donec facilisis quam ut purus rutrum lobortis.', 'type' => 'popular'],
         ]);
 
         // Fitur Why Choose Us
@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
                 'quote' => 'Facilisis quam ut purus rutrum lobortis. Donec vitae odio quis nisl dapibus malesuada. Nullam ac aliquet velit.',
                 'name' => 'Ahmad Fauzi',
                 'position' => 'Interior Designer',
-                'image' => 'images/person-1.png' 
+                'image' => 'images/person-1.png'
             ],
             [
                 'quote' => 'Aliquam vulputate velit imperdiet dolor tempor tristique. Pellentesque habitant morbi tristique senectus.',
@@ -106,8 +106,8 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
-        PageSettingSeeder::class,
-        UserSeeder::class,
-    ]);
+            PageSettingSeeder::class,
+            UserSeeder::class,
+        ]);
     }
 }

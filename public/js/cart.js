@@ -19,8 +19,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 const subtotalElem = document.querySelector('.cart-subtotal');
                 const totalElem = document.querySelector('.cart-total');
 
-                if (subtotalElem) subtotalElem.textContent = '$' + parseFloat(data.subtotal).toFixed(2);
-                if (totalElem) totalElem.textContent = '$' + parseFloat(data.total).toFixed(2);
+                // Ubah format ke Rupiah menggunakan toLocaleString('id-ID')
+                if (subtotalElem) {
+                    subtotalElem.textContent = 'Rp ' + Number(data.subtotal).toLocaleString('id-ID');
+                }
+                if (totalElem) {
+                    totalElem.textContent = 'Rp ' + Number(data.total).toLocaleString('id-ID');
+                }
             }
         })
         .catch(error => console.error('Error AJAX:', error));
@@ -41,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const price = parseFloat(priceVal.getAttribute('data-price')) || 0;
             const rowTotal = price * quantity;
             
-            rowTotalElem.textContent = '$' + rowTotal.toFixed(2);
+            rowTotalElem.textContent = 'Rp ' + Number(rowTotal).toLocaleString('id-ID');
         }
     }
 
@@ -53,7 +58,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const qtyInput = row.querySelector('.quantity-amount');
             let currentQty = parseInt(qtyInput.value) || 1;
 
-            // Batasi minimal 1
             if (currentQty > 1) {
                 qtyInput.value = currentQty - 1;
                 recalculateRow(row);
@@ -76,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // 3. kalau user ngetik manual
+    // 3. Kalau user mengetik kuantitas secara manual
     cartForm.querySelectorAll('.quantity-amount').forEach(input => {
         input.addEventListener('input', function () {
             const row = this.closest('tr');

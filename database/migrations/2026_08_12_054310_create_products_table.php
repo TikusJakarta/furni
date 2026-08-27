@@ -14,6 +14,7 @@ return new class extends Migration {
     $table->id();
     $table->string('name');
     $table->decimal('price', 10, 2)->nullable();
+    $table->integer('weight')->default(1000);
     $table->integer('stock')->default(0); // <-- TAMBAHKAN KOLOM INI
     $table->string('image');
     $table->text('description')->nullable();
