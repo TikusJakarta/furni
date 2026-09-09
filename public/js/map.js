@@ -1,137 +1,248 @@
-document.addEventListener("DOMContentLoaded", function() {
-    let defaultLat = -6.175392;
-    let defaultLng = 106.827153;
+let map, marker;
 
-    let savedLat = document.getElementById('latitude').value;
-    let savedLng = document.getElementById('longitude').value;
+document.addEventListener('DOMContentLoaded', function () {
+    const mapElement = document.getElementById('map');
+    if (!mapElement) return;
 
-    let lat = savedLat ? parseFloat(savedLat) : defaultLat;
-    let lng = savedLng ? parseFloat(savedLng) : defaultLng;
+    // Koordinat default (Jakarta)
+    const defaultLat = -6.175392;
+    const defaultLng = 106.827153;
 
-    var map = L.map('map').setView([lat, lng], 14);
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    
+    // Perbaikan selector agar sinkron dengan file Blade
+    const cityInput = document.querySelector('input[name="state_country"]') || document.getElementById('c_state_country') || document.getElementById('city');
+    const addressInput = document.querySelector('input[name="address"]') || document.querySelector('textarea[name="address"]') || document.getElementById('c_address');
+    const postalInput = document.querySelector('input[name="postal_zip"]') || document.getElementById('c_postal_zip');
+    const nameInput = document.querySelector('input[name="first_name"]') || document.getElementById('c_fname');
+    const phoneInput = document.querySelector('input[name="phone"]') || document.getElementById('c_phone');
+
+    let initialLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
+    let initialLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
+
+    // Inisialisasi Peta Leaflet
+    map = L.map('map').setView([initialLat, initialLng], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    var marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
 
-    function updateMarkerPosition(latLng) {
-        document.getElementById('latitude').value = latLng.lat;
-        document.getElementById('longitude').value = latLng.lng;
+    function updatePosition(lat, lng) {
+        marker.setLatLng([lat, lng]);
+        map.setView([lat, lng], 15);
+
+        if (latInput) latInput.value = lat;
+        if (lngInput) lngInput.value = lng;
+
+        const cityName = cityInput ? cityInput.value : '';
+        fetchShippingRates(lat, lng, cityName);
+    }
+
+    // Event saat marker digeser
+    marker.on('dragend', function () {
+        const pos = marker.getLatLng();
+        updatePosition(pos.lat, pos.lng);
+    });
+
+    // Event saat peta diklik
+    map.on('click', function (e) {
+        updatePosition(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Event jika input kota diketik/berubah manual
+    if (cityInput) {
+        cityInput.addEventListener('input', function () {
+            const lat = latInput && latInput.value ? parseFloat(latInput.value) : initialLat;
+            const lng = lngInput && lngInput.value ? parseFloat(lngInput.value) : initialLng;
+            fetchShippingRates(lat, lng, cityInput.value);
+        });
+    }
+
+    // EVENT: Jika User Memilih Alamat dari Dropdown Tersimpan
+    const savedAddressSelect = document.getElementById('saved_address_select');
+    if (savedAddressSelect) {
+        savedAddressSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (!selectedOption.value) return;
+
+            const addr = selectedOption.dataset.address;
+            const city = selectedOption.dataset.city;
+            const postal = selectedOption.dataset.postal;
+            const lat = parseFloat(selectedOption.dataset.lat) || defaultLat;
+            const lng = parseFloat(selectedOption.dataset.lng) || defaultLng;
+            const name = selectedOption.dataset.name;
+            const phone = selectedOption.dataset.phone;
+
+            if (addressInput) addressInput.value = addr;
+            if (cityInput) cityInput.value = city;
+            if (postalInput) postalInput.value = postal;
+            if (nameInput) nameInput.value = name;
+            if (phoneInput) phoneInput.value = phone;
+
+            updatePosition(lat, lng);
+        });
+    }
+
+    fetchShippingRates(initialLat, initialLng, cityInput ? cityInput.value : '');
+});
+
+// Fungsi untuk mengambil data ongkir via AJAX ke Backend
+function fetchShippingRates(lat, lng, cityName = '') {
+    const courierSelect = document.getElementById('shipping_courier_select');
+    if (!courierSelect) return;
+
+    courierSelect.innerHTML = '<option value="">Mencari pilihan kurir...</option>';
+
+    fetch('/checkout/check-rates', { 
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({ 
+            latitude: lat, 
+            longitude: lng, 
+            city: cityName 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        courierSelect.innerHTML = '<option value="">-- Pilih Layanan Kurir --</option>';
         
-        fetchBiteshipRates(latLng.lat, latLng.lng);
-    }
+        if (data.success && data.pricing && data.pricing.length > 0) {
+            let instantGroup = document.createElement('optgroup');
+            instantGroup.label = '🚀 Layanan Instant / Same Day';
 
-    if(!savedLat) {
-        updateMarkerPosition({ lat: defaultLat, lng: defaultLng });
-    } else {
-        fetchBiteshipRates(lat, lng);
-    }
+            let regulerGroup = document.createElement('optgroup');
+            regulerGroup.label = '📦 Layanan Reguler & Ekonomi';
 
-    marker.on('dragend', function(e) {
-        var position = marker.getLatLng();
-        updateMarkerPosition(position);
-        map.panTo(position);
+            let hasInstant = false;
+            let hasReguler = false;
+
+            data.pricing.forEach(rate => {
+                let option = document.createElement('option');
+                option.value = `${rate.courier_name} - ${rate.courier_service_name}`;
+                option.dataset.cost = rate.price;
+                option.text = `${rate.courier_name} - ${rate.courier_service_name} - Rp ${numberFormat(rate.price)} (${rate.shipment_duration})`;
+
+                if (rate.type === 'instant') {
+                    instantGroup.appendChild(option);
+                    hasInstant = true;
+                } else {
+                    regulerGroup.appendChild(option);
+                    hasReguler = true;
+                }
+            });
+
+            if (hasInstant) courierSelect.appendChild(instantGroup);
+            if (hasReguler) courierSelect.appendChild(regulerGroup);
+
+        } else {
+            courierSelect.innerHTML = '<option value="">Tidak ada kurir tersedia untuk lokasi ini</option>';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching shipping rates:', error);
+        courierSelect.innerHTML = '<option value="">Gagal memuat kurir</option>';
     });
+}
 
-    map.on('click', function(e) {
-        marker.setLatLng(e.latlng);
-        updateMarkerPosition(e.latlng);
-        map.panTo(e.latlng);
-    });
+// Event untuk tombol Simpan Alamat
+document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'btn-save-address') {
+        const labelInput = document.getElementById('new_address_label');
+        const label = labelInput ? labelInput.value.trim() : '';
 
-    function fetchBiteshipRates(latitude, longitude) {
-        let selectCourier = document.getElementById('shipping_courier_select');
-        if (!selectCourier) return;
+        const firstName = document.querySelector('input[name="first_name"]')?.value || document.getElementById('c_fname')?.value || '';
+        const lastName = document.querySelector('input[name="last_name"]')?.value || document.getElementById('c_lname')?.value || '';
+        const recipientName = (firstName + ' ' + lastName).trim();
+        
+        const phone = document.querySelector('input[name="phone"]')?.value || document.getElementById('c_phone')?.value || '';
+        const address = document.querySelector('input[name="address"]')?.value || document.getElementById('c_address')?.value || '';
+        const city = document.querySelector('input[name="state_country"]')?.value || document.getElementById('c_state_country')?.value || '';
+        const postalZip = document.querySelector('input[name="postal_zip"]')?.value || document.getElementById('c_postal_zip')?.value || '';
+        const latitude = document.getElementById('latitude')?.value || '';
+        const longitude = document.getElementById('longitude')?.value || '';
 
-        selectCourier.innerHTML = '<option value="">Memuat tarif kurir dari Biteship...</option>';
+        if (!label) {
+            alert('Silakan isi label alamat terlebih dahulu (Cth: Rumah / Toko).');
+            if (labelInput) labelInput.focus();
+            return;
+        }
 
-        fetch('/check-shipping-rates', {
+        if (!address || !city) {
+            alert('Alamat dan kota wajib diisi!');
+            return;
+        }
+
+        fetch('/checkout/save-address', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
-            credentials: 'include',
-            body: JSON.stringify({ 
-                latitude: latitude, 
-                longitude: longitude 
+            body: JSON.stringify({
+                label: label,
+                recipient_name: recipientName || 'Penerima',
+                phone: phone,
+                address: address,
+                city: city,
+                postal_zip: postalZip,
+                latitude: latitude,
+                longitude: longitude
             })
         })
-        .then(res => res.json())
+        .then(response => response.json())
         .then(data => {
-            if(data.success && data.pricing.length > 0) {
-                selectCourier.innerHTML = '<option value="">-- Pilih Layanan Kurir --</option>';
-
-                // 1. Buat Grup Kategori agar rapi
-                let instantGroup = document.createElement('optgroup');
-                instantGroup.label = '⚡ Layanan Instant & Same Day';
-
-                let regulerGroup = document.createElement('optgroup');
-                regulerGroup.label = '📦 Layanan Reguler & Ekonomi';
-
-                data.pricing.forEach(item => {
-                    let opt = document.createElement('option');
-                    
-                    let courierNameService = `${item.courier_name.toUpperCase()} - ${item.courier_service_name}`;
-                    
-                    // Simpan nama kurir di value (untuk database shipping_courier)
-                    opt.value = courierNameService;
-                    // Simpan harga di attribute data-price
-                    opt.setAttribute('data-price', item.price);
-                    
-                    opt.textContent = `${courierNameService} - Rp ${item.price.toLocaleString('id-ID')} (${item.shipment_duration})`;
-
-                    // 2. Pisahkan otomatis masuk grup Instant atau Reguler berdasarkan durasi/nama layanan
-                    let serviceName = item.courier_service_name.toLowerCase();
-                    let duration = item.shipment_duration.toLowerCase();
-
-                    if (serviceName.includes('instant') || serviceName.includes('same day') || duration.includes('hour') || duration.includes('jam')) {
-                        instantGroup.appendChild(opt);
-                    } else {
-                        regulerGroup.appendChild(opt);
-                    }
-                });
-
-                // 3. Masukkan grup ke dalam select (hanya jika ada isinya)
-                if (instantGroup.children.length > 0) selectCourier.appendChild(instantGroup);
-                if (regulerGroup.children.length > 0) selectCourier.appendChild(regulerGroup);
-
+            if (data.success) {
+                alert(data.message);
+                location.reload();
             } else {
-                selectCourier.innerHTML = '<option value="">Kurir tidak tersedia untuk lokasi ini</option>';
+                alert('Gagal menyimpan alamat.');
             }
         })
-        .catch(err => {
-            console.error('Biteship Error:', err);
-            selectCourier.innerHTML = '<option value="">Gagal memuat tarif kurir</option>';
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan sistem.');
         });
     }
+});
 
-    let courierSelectEl = document.getElementById('shipping_courier_select');
-    if (courierSelectEl) {
-        courierSelectEl.addEventListener('change', function() {
-            let selectedOption = this.options[this.selectedIndex];
-            // Ambil harga dari attribute data-price
-            let cost = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+// Format angka ke Rupiah
+function numberFormat(number) {
+    return new Intl.NumberFormat('id-ID').format(number);
+}
 
-            document.getElementById('shipping_cost_input').value = cost;
-            
-            let shippingText = document.getElementById('shipping-cost-text');
-            if (shippingText) {
-                shippingText.innerText = 'Rp ' + cost.toLocaleString('id-ID');
-            }
+// Kalkulasi otomatis Total Harga saat kurir dipilih
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'shipping_courier_select') {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const cost = selectedOption.dataset.cost ? parseFloat(selectedOption.dataset.cost) : 0;
 
-            // Ambil nilai subtotal dan hitung Order Total (Subtotal + Ongkir)
-            let subtotalElem = document.getElementById('subtotal-text');
-            let subtotal = parseFloat(subtotalElem?.getAttribute('data-subtotal')) || 0;
-            let grandTotal = subtotal + cost;
+        const shippingCostInput = document.getElementById('shipping_cost_input');
+        const shippingCostText = document.getElementById('shipping-cost-text');
+        const orderTotalText = document.getElementById('order-total-text');
+        
+        if (shippingCostInput) shippingCostInput.value = cost;
+        if (shippingCostText) shippingCostText.innerText = 'Rp ' + numberFormat(cost);
 
-            let orderTotalElem = document.getElementById('order-total-text');
-            if (orderTotalElem) {
-                orderTotalElem.innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
-            }
-        });
+        let subtotal = 0;
+        const subtotalEl = document.getElementById('subtotal-amount') || document.querySelector('.cart-subtotal') || document.getElementById('subtotal-text'); 
+        if (subtotalEl) {
+            subtotal = parseFloat(subtotalEl.dataset.subtotal || subtotalEl.innerText.replace(/[^0-9]/g, '')) || 0;
+        }
+        
+        let discount = 0;
+        const discountEl = document.getElementById('discount-amount');
+        if (discountEl) {
+            discount = parseFloat(discountEl.dataset.discount || discountEl.innerText.replace(/[^0-9]/g, '')) || 0;
+        }
+
+        let total = (subtotal - discount) + cost;
+        if (orderTotalText) orderTotalText.innerText = 'Rp ' + numberFormat(total);
     }
 });

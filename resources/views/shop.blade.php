@@ -31,26 +31,42 @@
             <div class="row">
                 @foreach($products as $product)
                     <div class="col-12 col-md-4 col-lg-3 mb-5">
-                        <div class="product-item">
-                            <!-- Tombol/Card yang diklik untuk memunculkan Pop-up Modal -->
+                        <div class="product-item {{ $product->effective_stock <= 0 ? 'opacity-75' : '' }}">
+
+                            <!-- Card / Trigger Modal -->
                             <a href="#" class="product-modal-trigger" data-id="{{ $product->id }}"
                                 data-name="{{ $product->name }}"
                                 data-price="Rp {{ number_format($product->price, 0, ',', '.') }}"
                                 data-description="{{ $product->description ?? 'Belum ada deskripsi untuk produk ini.' }}"
                                 data-weight="{{ $product->weight >= 1000 ? ($product->weight / 1000) . ' kg' : $product->weight . ' gram' }}"
-                                data-stock="{{ $product->stock }}" data-image="{{ asset($product->image) }}"
+                                data-stock="{{ $product->effective_stock }}" 
+                                data-image="{{ asset($product->image) }}"
+                                data-rating="{{ number_format($product->averageRating(), 1) }}"
+                                data-reviews-count="{{ $product->reviews->count() }}"
                                 data-cart-url="{{ route('cart.add', $product->id) }}">
 
                                 <img src="{{ asset($product->image) }}" class="img-fluid product-thumbnail"
                                     alt="{{ $product->name }}">
                                 <h3 class="product-title">{{ $product->name }}</h3>
                                 <strong class="product-price">Rp {{ number_format($product->price, 0, ',', '.') }}</strong>
-                                <span class="d-block text-muted small mt-1">Stock: {{ $product->stock }}</span>
+
+                                @if($product->effective_stock > 0)
+                                    <span class="d-block text-muted small mt-1">Stock: {{ $product->effective_stock }}</span>
+                                @else
+                                    <span class="d-block text-danger font-weight-bold small mt-1">Stok Habis</span>
+                                @endif
                             </a>
 
-                            <a href="{{ route('cart.add', $product->id) }}" class="icon-cross">
-                                <img src="{{ asset('images/cross.svg') }}" class="img-fluid" alt="Cross">
-                            </a>
+                            @if($product->effective_stock > 0)
+                                <a href="{{ route('cart.add', $product->id) }}" class="icon-cross">
+                                    <img src="{{ asset('images/cross.svg') }}" class="img-fluid" alt="Cross">
+                                </a>
+                            @else
+                                <span class="icon-cross" style="background-color: #ccc; cursor: not-allowed;" title="Stok Habis">
+                                    <img src="{{ asset('images/cross.svg') }}" class="img-fluid opacity-50" alt="Cross">
+                                </span>
+                            @endif
+
                         </div>
                     </div>
                 @endforeach
@@ -63,14 +79,13 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header border-0 pb-0">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"
-                        style="border: none; background: none; font-size: 1.5rem;">
+                    <button type="button" class="close" id="closeModalBtn" aria-label="Close"
+                        style="border: none; background: none; font-size: 1.5rem; cursor: pointer; outline: none;">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body px-4 pb-4">
                     <div class="row align-items-center">
-                        <!-- Gambar Produk -->
                         <div class="col-md-6 mb-4 mb-md-0">
                             <img id="modal-img" src="" alt="" class="img-fluid rounded shadow-sm w-100"
                                 style="max-height: 350px; object-fit: cover;">
@@ -78,7 +93,14 @@
 
                         <!-- Informasi Produk -->
                         <div class="col-md-6 pl-md-4">
-                            <h3 id="modal-name" class="text-black font-weight-bold mb-3"></h3>
+                            <h3 id="modal-name" class="text-black font-weight-bold mb-2"></h3>
+                            
+                            <!-- Bagian Rating Bintang di Modal -->
+                            <div class="mb-2">
+                                <span id="modal-rating-stars" class="text-warning"></span>
+                                <span id="modal-rating-text" class="text-muted small ms-2"></span>
+                            </div>
+
                             <h4 id="modal-price" class="text-primary font-weight-bold mb-3" style="font-size: 1.5rem;"></h4>
                             <p id="modal-desc" class="text-muted mb-4 small"></p>
 
@@ -111,6 +133,27 @@
         </div>
     </div>
 
-    <!-- Panggil Script untuk Modal & Plus-Minus -->
     <script src="{{ asset('js/detail.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const closeBtn = document.getElementById('closeModalBtn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    $('#productModal').modal('hide');
+                });
+            }
+        });
+    </script>
+
+    @if(session('swal_error'))
+        <script>
+            Swal.fire({
+                icon: 'warning',
+                title: 'Waduh, Keranjang Kosong!',
+                text: '{{ session('swal_error') }}',
+                confirmButtonColor: '#3b5d50',
+                confirmButtonText: 'Belanja Sekarang'
+            });
+        </script>
+    @endif
 @endsection

@@ -21,6 +21,8 @@ return new class extends Migration {
             $table->string('email');
             $table->string('phone');
             $table->string('payment_method');
+            $table->string('proof_of_payment')->nullable();
+            
             $table->text('order_notes')->nullable();
             $table->decimal('total_price', 12, 2);
             // Kolom Latitude & Longitude untuk Leaflet.js

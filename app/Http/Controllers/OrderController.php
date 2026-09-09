@@ -17,17 +17,14 @@ class OrderController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Cari pesanan beserta item produknya (pastikan relasi 'items' sudah ada di Model Order)
             $order = Order::with('items')->findOrFail($orderId);
-            
+
             if ($order->status === 'paid') {
-                return response()->json(['message' => 'Pesanan sudah dibayar sebelumnya.']);
+                return redirect()->route('user.dashboard')->with('info', 'Pesanan ini sudah dibayar sebelumnya.');
             }
 
-            // Ubah status order jadi paid
             $order->update(['status' => 'paid']);
 
-            // Kurangi stok fisik di tabel products secara permanen
             foreach ($order->items as $item) {
                 $product = Product::lockForUpdate()->find($item->product_id);
                 if ($product) {
@@ -36,15 +33,15 @@ class OrderController extends Controller
                 }
             }
 
-            // Hapus data limit_stocks karena stok fisik sudah dipotong permanen
             LimitStock::where('order_id', $order->id)->delete();
 
             DB::commit();
-            return response()->json(['message' => 'Pembayaran berhasil dikonfirmasi dan stok diperbarui.']);
+
+            return redirect()->route('user.dashboard')->with('payment_success', 'Pembayaran berhasil dikonfirmasi dan stok diperbarui!');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
@@ -56,14 +53,13 @@ class OrderController extends Controller
         DB::beginTransaction();
         try {
             $order = Order::findOrFail($orderId);
-            
+
             if ($order->status === 'cancelled') {
                 return response()->json(['message' => 'Pesanan sudah dibatalkan sebelumnya.']);
             }
 
             $order->update(['status' => 'cancelled']);
 
-            // Hapus limit_stocks agar stok kembali bebas/bisa dibeli orang lain
             LimitStock::where('order_id', $orderId)->delete();
 
             DB::commit();
@@ -74,4 +70,55 @@ class OrderController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Menampilkan halaman instruksi pembayaran (QR / Transfer) untuk user
+     */
+    public function showPayment($id)
+    {
+        $order = Order::with('orderItems.product')
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
+
+        if ($order->status !== 'pending') {
+            return redirect()->route('user.dashboard')->with('error', 'Pesanan ini sudah dibayar atau selesai.');
+        }
+
+        return view('order.pay', compact('order'));
+    }
+
+    /**
+     * 3. Fungsi untuk memproses upload bukti transfer bank (Maks. 8MB)
+     */
+    public function uploadProof(Request $request, $orderId)
+{
+    $request->validate([
+        'proof_of_payment' => 'required|image|mimes:jpeg,png,jpg|max:8192',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        $order = Order::findOrFail($orderId);
+
+        if ($request->hasFile('proof_of_payment')) {
+            $file = $request->file('proof_of_payment');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/proofs'), $filename);
+            
+            $order->proof_of_payment = 'uploads/proofs/' . $filename;
+        }
+
+        // Karena transfer bank, ubah status ke 'verifikasi' untuk dicek admin
+        $order->status = 'verifikasi';
+        $order->save();
+
+        DB::commit();
+
+        return redirect()->route('user.dashboard')->with('payment_success', 'Bukti transfer berhasil diunggah! Menunggu verifikasi dari Admin.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
+    }
 }
+}   

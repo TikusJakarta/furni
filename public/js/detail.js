@@ -17,6 +17,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalForm = document.getElementById('modal-form');
     const qtyInput = document.getElementById('modal-stock-input');
     const submitBtn = document.getElementById('modal-submit-btn');
+    
+    // Elemen Rating Baru
+    const modalRatingStars = document.getElementById('modal-rating-stars');
+    const modalRatingText = document.getElementById('modal-rating-text');
 
     let maxStock = 999;
 
@@ -33,10 +37,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const stock = parseInt(this.getAttribute('data-stock'));
             const image = this.getAttribute('data-image');
             const cartUrl = this.getAttribute('data-cart-url');
+            const rating = parseFloat(this.getAttribute('data-rating')) || 0;
+            const reviewsCount = this.getAttribute('data-reviews-count') || 0;
 
             maxStock = stock;
 
-            // Masukkan data ke dalam elemen modal
+            // Masukkan data dasar ke dalam elemen modal
             modalImg.src = image;
             modalName.textContent = name;
             modalPrice.textContent = price;
@@ -46,15 +52,27 @@ document.addEventListener('DOMContentLoaded', function () {
             qtyInput.value = 1;
             qtyInput.setAttribute('max', stock);
 
+            // Render Tampilan Rating Bintang di Modal
+            if (modalRatingStars && modalRatingText) {
+                modalRatingText.textContent = `(${rating.toFixed(1)} dari 5.0 - ${reviewsCount} Ulasan)`;
+                let stars = '';
+                for (let i = 1; i <= 5; i++) {
+                    stars += i <= Math.floor(rating) ? '★' : '☆';
+                }
+                modalRatingStars.textContent = stars;
+            }
+
             // Atur badge stok & tombol aktif/mati
             if (stock > 0) {
                 modalStockBadge.innerHTML = `<span class="badge bg-success text-white">${stock} pcs</span>`;
                 qtyInput.removeAttribute('disabled');
                 submitBtn.removeAttribute('disabled');
+                submitBtn.style.opacity = '1';
             } else {
                 modalStockBadge.innerHTML = `<span class="badge bg-danger text-white">Habis</span>`;
                 qtyInput.setAttribute('disabled', 'true');
                 submitBtn.setAttribute('disabled', 'true');
+                submitBtn.style.opacity = '0.5';
             }
 
             // Tampilkan modal

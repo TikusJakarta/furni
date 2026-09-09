@@ -93,8 +93,13 @@ class CartController extends Controller
 
     public function checkout()
     {
-        $settings = Setting::pluck('value', 'key')->all();
         $cartItems = session()->get('cart', []);
+        
+        if (empty($cartItems)) {
+            return redirect()->route('shop')->with('swal_error', 'Keranjang belanjaan kamu masih kosong. Silakan pilih produk terlebih dahulu!');
+        }
+
+        $settings = Setting::pluck('value', 'key')->all();
         
         $subtotal = 0;
         foreach ($cartItems as $item) {

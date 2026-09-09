@@ -21,10 +21,21 @@
     </title>
     @stack('styles')
     <!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
 
 <body>
+
+    @auth
+        @if(auth()->user()->status == 'suspended')
+            <div class="bg-danger text-white text-center py-2 px-3 fw-bold"
+                style="font-size: 14px; z-index: 9999; position: relative;">
+                ⚠️ Perhatian: Akun Anda sedang ditangguhkan (suspended). Anda dapat menjelajahi website ini, namun fitur
+                checkout dibatasi.
+            </div>
+        @endif
+    @endauth
 
     <!-- Start Header/Navigation -->
     <nav class="custom-navbar navbar navbar-expand-md navbar-dark bg-dark" aria-label="Furni navigation bar">
@@ -57,17 +68,30 @@
                     <li class="nav-item {{ request()->routeIs('contact*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('contact') }}">Contact us</a>
                     </li>
+
+                    {{-- Menu Admin di Navbar --}}
+                    @auth
+                        @if(auth()->user()->role === 'admin')
+                            <li class="nav-item {{ request()->routeIs('admin*') ? 'active' : '' }}">
+                                <a class="nav-link text-warning fw-bold" href="{{ route('admin.dashboard') }}">Admin Panel</a>
+                            </li>
+                        @endif
+                    @endauth
                 </ul>
 
                 <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
-                    <li><a class="nav-link" href="{{ route('login') }}"><img src="{{ asset('images/user.svg') }}" alt="User"></a></li>
+                    <li>
+                        <a class="nav-link" href="{{ auth()->check() ? route('user.dashboard') : route('login') }}">
+                            <img src="{{ asset('images/user.svg') }}" alt="User">
+                        </a>
+                    </li>
                     @auth
-    <!-- Tombol Logout Darurat -->
-    <form action="{{ route('logout') }}" method="POST" class="d-inline">
-        @csrf
-        <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Logout</button>
-    </form>
-@endauth
+                        <!-- Tombol Logout Darurat -->
+                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Logout</button>
+                        </form>
+                    @endauth
                     <li><a class="nav-link" href="{{ route('cart') }}"><img src="{{ asset('images/cart.svg') }}"
                                 alt="Cart"></a></li>
                 </ul>
@@ -86,7 +110,8 @@
     <footer class="footer-section">
         <div class="container relative">
             <div class="sofa-img">
-                <img src="{{ asset($settings['footer_sofa_image'] ?? 'images/sofa.png') }}" alt="Image" class="img-fluid">
+                <img src="{{ asset($settings['footer_sofa_image'] ?? 'images/sofa.png') }}" alt="Image"
+                    class="img-fluid">
             </div>
 
             <div class="row">
@@ -124,13 +149,19 @@
                         <a href="{{ route('home') }}"
                             class="footer-logo">{{ $settings['brand_name'] ?? 'Furni' }}<span>.</span></a>
                     </div>
-                    <p class="mb-4">{{ $settings['footer_description'] ?? 'Donec facilisis quam ut purus rutrum lobortis. Donec vitae odio quis nisl dapibus malesuada. Nullam ac aliquet velit.' }}</p>
+                    <p class="mb-4">
+                        {{ $settings['footer_description'] ?? 'Donec facilisis quam ut purus rutrum lobortis. Donec vitae odio quis nisl dapibus malesuada. Nullam ac aliquet velit.' }}
+                    </p>
 
                     <ul class="list-unstyled custom-social">
-                        <li><a href="{{ $settings['social_facebook'] ?? '#' }}"><span class="fa fa-brands fa-facebook-f"></span></a></li>
-                        <li><a href="{{ $settings['social_twitter'] ?? '#' }}"><span class="fa fa-brands fa-twitter"></span></a></li>
-                        <li><a href="{{ $settings['social_instagram'] ?? '#' }}"><span class="fa fa-brands fa-instagram"></span></a></li>
-                        <li><a href="{{ $settings['social_linkedin'] ?? '#' }}"><span class="fa fa-brands fa-linkedin"></span></a></li>
+                        <li><a href="{{ $settings['social_facebook'] ?? '#' }}"><span
+                                    class="fa fa-brands fa-facebook-f"></span></a></li>
+                        <li><a href="{{ $settings['social_twitter'] ?? '#' }}"><span
+                                    class="fa fa-brands fa-twitter"></span></a></li>
+                        <li><a href="{{ $settings['social_instagram'] ?? '#' }}"><span
+                                    class="fa fa-brands fa-instagram"></span></a></li>
+                        <li><a href="{{ $settings['social_linkedin'] ?? '#' }}"><span
+                                    class="fa fa-brands fa-linkedin"></span></a></li>
                     </ul>
                 </div>
 
@@ -195,6 +226,22 @@
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('js/tiny-slider.js') }}"></script>
     <script src="{{ asset('js/custom.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @if(session('swal_error'))
+        <script>
+            Swal.fire({
+                icon: 'warning',
+                title: 'Waduh, Keranjang Kosong!',
+                text: '{{ session('swal_error') }}',
+                confirmButtonColor: '#3b5d50',
+                confirmButtonText: 'Belanja Sekarang'
+            });
+        </script>
+    @endif
+
+    @include('partials.order-swal')
+    @include('partials.payment-swal')
     @stack('scripts')
 </body>
 

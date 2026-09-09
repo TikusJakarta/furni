@@ -25,9 +25,12 @@
     <div class="untree_co-section">
         <div class="container">
 
-            {{-- Notifikasi Error Umum --}}
+            {{-- Notifikasi Error / Success --}}
             @if(session('error'))
                 <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+            @if(session('success'))
+                <div class="alert alert-success">{{ session('success') }}</div>
             @endif
 
             @if ($errors->any())
@@ -53,6 +56,26 @@
                 <div class="row">
                     <!-- Kolom Kiri: Billing Details -->
                     <div class="col-md-6 mb-5 mb-md-0">
+
+                        {{-- Dropdown Pilihan Alamat Tersimpan --}}
+                        @if(isset($userAddresses) && $userAddresses->count() > 0)
+                            <div class="mb-4 p-4 bg-light border rounded shadow-sm">
+                                <label for="saved_address_select" class="font-weight-bold text-black mb-2">📍 Pilih dari Alamat Tersimpan:</label>
+                                <select id="saved_address_select" class="form-control">
+                                    <option value="">-- Ketik manual atau pilih alamat tersimpan --</option>
+                                    @foreach($userAddresses as $addr)
+                                        <option value="{{ $addr->id }}" data-address="{{ $addr->address }}"
+                                            data-city="{{ $addr->city }}" data-postal="{{ $addr->postal_code }}"
+                                            data-lat="{{ $addr->latitude }}" data-lng="{{ $addr->longitude }}"
+                                            data-name="{{ $addr->recipient_name }}" data-phone="{{ $addr->phone }}">
+                                            {{ $addr->label }} — {{ $addr->recipient_name }} ({{ $addr->address }},
+                                            {{ $addr->city }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
                         <h2 class="h3 mb-3 text-black">Billing Details</h2>
                         <div class="p-3 p-lg-5 border bg-white">
 
@@ -149,11 +172,27 @@
                                 <label class="text-black font-weight-bold mb-2">Pin Location on Map (Optional)</label>
                                 <p class="text-muted small mb-2">Klik atau geser pin pada peta untuk menandai titik lokasi
                                     pengiriman.</p>
-                                <div id="map" data-subtotal="{{ $subtotal ?? 0 }}"
+                                <div id="map" data-subtotal="{{ $total ?? ($subtotal ?? 0) }}"
                                     style="height: 320px; width: 100%; border-radius: 6px;" class="border"></div>
                                 <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
                                 <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude') }}">
                                 @error('latitude') <small class="text-danger">{{ $message }}</small> @enderror
+                            </div>
+
+                            {{-- Kotak & Tombol Simpan Alamat Baru --}}
+                            <div class="mt-4 p-4 bg-light border rounded shadow-sm mb-4">
+                                <h5 class="font-weight-bold text-black mb-2" style="font-size: 15px;">💾 Simpan Alamat Ini untuk Checkout Berikutnya</h5>
+                                <div class="row align-items-end">
+                                    <div class="col-md-8 mb-2 mb-md-0">
+                                        <label class="small text-muted mb-1">Label Alamat (Cth: Rumah Utama, Toko, Kantor)</label>
+                                        <input type="text" id="new_address_label" class="form-control form-control-sm" placeholder="Beri nama alamat ini...">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" id="btn-save-address" class="btn btn-primary btn-sm btn-block py-2 text-white font-weight-bold" style="background-color: #2f3b4c; border-color: #2f3b4c;">
+                                            Simpan Alamat
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Opsi Alamat Pengiriman Berbeda -->
@@ -210,8 +249,36 @@
                         </div>
                     </div>
 
-                    <!-- Kolom Kanan: Order Summary & Payment Methods -->
+                    <!-- Kolom Kanan: Order Summary, Kupon & Payment Methods -->
                     <div class="col-md-6">
+
+                        <!-- KOTAK KUPON PROMO -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h3 class="h3 mb-3 text-black">Kode Promo</h3>
+                                <div class="p-3 p-lg-4 border bg-white">
+                                    @if(session('coupon'))
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="text-success fw-bold"><i class="fa fa-tag"></i> Kupon Aktif:</span>
+                                                <code>{{ session('coupon')['code'] }}</code>
+                                            </div>
+                                            <button type="button" id="remove-coupon-btn"
+                                                class="btn btn-sm btn-outline-danger">Hapus Kupon</button>
+                                        </div>
+                                    @else
+                                        <div class="input-group">
+                                            <input type="text" id="coupon_code_input" class="form-control"
+                                                placeholder="Masukkan kode promo">
+                                            <button class="btn btn-black text-white" type="button"
+                                                id="apply-coupon-btn">Gunakan</button>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- YOUR ORDER -->
                         <div class="row mb-5">
                             <div class="col-md-12">
                                 <h2 class="h3 mb-3 text-black">Your Order</h2>
@@ -227,7 +294,8 @@
                                             @forelse($cartItems ?? [] as $id => $item)
                                                 <tr>
                                                     <td>{{ $item['name'] }} <strong class="mx-2">x</strong>
-                                                        {{ $item['quantity'] }}</td>
+                                                        {{ $item['quantity'] }}
+                                                    </td>
                                                     <td>Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
                                                     </td>
                                                 </tr>
@@ -238,11 +306,20 @@
                                             @endforelse
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Cart Subtotal</strong></td>
-                                                <!-- Tambahkan attribute data-subtotal agar mudah dibaca oleh JavaScript -->
                                                 <td class="text-black" id="subtotal-text"
                                                     data-subtotal="{{ $subtotal ?? 0 }}">Rp
-                                                    {{ number_format($subtotal ?? 0, 0, ',', '.') }}</td>
+                                                    {{ number_format($subtotal ?? 0, 0, ',', '.') }}
+                                                </td>
                                             </tr>
+
+                                            @if(isset($discount) && $discount > 0)
+                                                <tr class="text-success">
+                                                    <td><strong>Diskon Kupon</strong></td>
+                                                    <td class="text-end" id="coupon-discount-text"><strong>- Rp
+                                                            {{ number_format($discount, 0, ',', '.') }}</strong></td>
+                                                </tr>
+                                            @endif
+
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Shipping Cost</strong></td>
                                                 <td class="text-black" id="shipping-cost-text">Rp 0</td>
@@ -304,7 +381,9 @@
                                         <div class="collapse {{ old('payment_method') == 'qr' ? 'show' : '' }}"
                                             id="collapseqr">
                                             <div class="py-2">
-                                                <p class="mb-0 text-muted small">Scan the QRIS code using your mobile banking or e-wallet application (GoPay, OVO, Dana, BCA Mobile, etc.).</p>
+                                                <p class="mb-0 text-muted small">Scan the QRIS code using your mobile
+                                                    banking or e-wallet application (GoPay, OVO, Dana, BCA Mobile, etc.).
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -324,9 +403,10 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
+    <!-- Leaflet JS & Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <!-- Custom Map Script -->
     <script src="{{ asset('js/map.js') }}"></script>
+    <script src="{{ asset('js/coupon.js') }}"></script>
+    <script src="{{ asset('js/checkout-address.js') }}"></script>
 @endsection

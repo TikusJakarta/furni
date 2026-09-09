@@ -28,10 +28,22 @@ class Order extends Model
         'total_price',
         'latitude',
         'longitude',
+        'status',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Relasi utama
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
     public function items()
-{
-    return $this->hasMany(OrderItem::class, 'order_id');
-}
+    {
+        return $this->orderItems();
+    }
 }

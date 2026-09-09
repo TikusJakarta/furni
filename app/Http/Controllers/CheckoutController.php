@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Setting;
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\Coupon;
+use App\Models\UserAddress;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -16,13 +18,116 @@ class CheckoutController extends Controller
         $settings = Setting::pluck('value', 'key')->all();
         $cartItems = session()->get('cart', []);
 
+        if (empty($cartItems)) {
+            return redirect()->route('shop')->with('swal_error', 'Keranjang belanjaan kamu masih kosong. Silakan pilih produk terlebih dahulu!');
+        }
+
         $subtotal = 0;
         foreach ($cartItems as $item) {
             $subtotal += $item['price'] * $item['quantity'];
         }
-        $total = $subtotal; // Total awal sebelum ongkir dipilih
 
-        return view('checkout', compact('settings', 'cartItems', 'subtotal', 'total'));
+        // Perhitungan Diskon Kupon
+        $discount = 0;
+        $coupon = session()->get('coupon');
+        if ($coupon) {
+            if ($coupon['type'] == 'percentage') {
+                $discount = ($subtotal * $coupon['value']) / 100;
+            } else {
+                $discount = $coupon['value'];
+            }
+        }
+        
+        $discount = min($discount, $subtotal);
+        $total = $subtotal - $discount;
+
+        // Ambil alamat tersimpan milik user yang sedang login
+        $userAddresses = auth()->check() ? auth()->user()->addresses()->latest()->get() : collect();
+
+        return view('checkout', compact('settings', 'cartItems', 'subtotal', 'discount', 'total', 'coupon', 'userAddresses'));
+    }
+
+    // Simpan Alamat Baru dari Checkout
+    public function storeAddress(Request $request)
+    {
+        $request->validate([
+            'label' => 'required|string|max:255',
+            'recipient_name' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string',
+            'city' => 'required|string|max:255',
+            'postal_zip' => 'nullable|string|max:20',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+        UserAddress::create([
+            'user_id' => auth()->id(),
+            'label' => $request->label,
+            'recipient_name' => $request->recipient_name,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'city' => $request->city,
+            'postal_code' => $request->postal_zip,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Alamat baru berhasil disimpan!']);
+    }
+
+    // Terapkan Kupon Promo
+    public function applyCoupon(Request $request)
+    {
+        $request->validate(['coupon_code' => 'required|string']);
+
+        $coupon = Coupon::where('code', $request->coupon_code)->first();
+
+        if (!$coupon) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Kode promo / kupon tidak valid.'], 422);
+            }
+            return redirect()->back()->with('error', 'Kode promo / kupon tidak valid.');
+        }
+
+        if ($coupon->expires_at && now()->greaterThan($coupon->expires_at)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Kode promo / kupon sudah kedaluwarsa.'], 422);
+            }
+            return redirect()->back()->with('error', 'Kode promo / kupon sudah kedaluwarsa.');
+        }
+
+        $cartItems = session()->get('cart', []);
+        $subtotal = array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
+
+        if ($subtotal < $coupon->min_spend) {
+            $msg = 'Minimal belanja untuk kupon ini adalah Rp ' . number_format($coupon->min_spend, 0, ',', '.');
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
+
+        session()->put('coupon', [
+            'code' => $coupon->code,
+            'type' => $coupon->type,
+            'value' => $coupon->value,
+        ]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Kupon diskon berhasil digunakan!']);
+        }
+        return redirect()->back()->with('success', 'Kupon diskon berhasil digunakan!');
+    }
+
+    // Hapus Kupon Promo
+    public function removeCoupon(Request $request)
+    {
+        session()->forget('coupon');
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Kupon berhasil dihapus.']);
+        }
+        return redirect()->back()->with('success', 'Kupon berhasil dihapus.');
     }
 
     public function checkRates(Request $request)
@@ -30,6 +135,7 @@ class CheckoutController extends Controller
         $request->validate([
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            'city' => 'nullable|string', 
         ]);
 
         $cartItems = session()->get('cart', []);
@@ -37,7 +143,6 @@ class CheckoutController extends Controller
             return response()->json(['success' => false, 'message' => 'Keranjang kosong'], 400);
         }
 
-        // Hitung total berat (gram) dan total harga barang dari keranjang
         $totalWeight = 0;
         $totalValue = 0;
         foreach ($cartItems as $item) {
@@ -46,14 +151,42 @@ class CheckoutController extends Controller
             $totalValue += $item['price'] * $item['quantity'];
         }
 
-        // Panggil API Biteship untuk cek tarif kurir Reguler & Instant
+        // --- FILTER KURIR PINTAR (BITESHIP + FALLBACK KOORDINAT) ---
+        $city = strtolower($request->input('city', ''));
+        $jabodetabekKeywords = ['jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'];
+        $isJabodetabek = false;
+
+        // 1. Cek dari teks kota yang diinput
+        foreach ($jabodetabekKeywords as $keyword) {
+            if (str_contains($city, $keyword)) {
+                $isJabodetabek = true;
+                break;
+            }
+        }
+
+        // 2. FALLBACK: Jika teks kota kosong/ngawur, cek berdasarkan koordinat GPS peta (Leaflet)
+        if (!$isJabodetabek && $request->latitude && $request->longitude) {
+            $lat = (float) $request->latitude;
+            $lng = (float) $request->longitude;
+            
+            // Batasan wilayah (Bounding Box) kasar untuk area Jabodetabek
+            if ($lat >= -6.65 && $lat <= -6.10 && $lng >= 106.50 && $lng <= 107.10) {
+                $isJabodetabek = true;
+            }
+        }
+
+        // Jika di Jabodetabek berikan opsi Reguler & Instant, jika di luar hanya Reguler
+        $couriers = $isJabodetabek 
+            ? 'jne,sicepat,jnt,gojek,grab' 
+            : 'jne,sicepat,jnt';
+
         $response = Http::withToken(env('BITESHIP_API_KEY'))
             ->post('https://api.biteship.com/v1/rates/couriers', [
                 'origin_latitude' => -6.175392,
                 'origin_longitude' => 106.827153,
                 'destination_latitude' => (float) $request->latitude,
                 'destination_longitude' => (float) $request->longitude,
-                'couriers' => 'jne,sicepat,jnt,gojek,grab',
+                'couriers' => $couriers,
                 'items' => [
                     [
                         'name' => 'Belanjaan Furni',
@@ -75,26 +208,38 @@ class CheckoutController extends Controller
         $biteshipData = $response->json();
         $pricing = [];
 
-        // Mapping hasil respon Biteship agar sesuai dengan dropdown di frontend kamu
         if (isset($biteshipData['pricing'])) {
             foreach ($biteshipData['pricing'] as $rate) {
+                $serviceName = $rate['courier_service_name'] ?? $rate['service_name'];
+                $serviceLower = strtolower($serviceName);
+                
+                // Klasifikasikan jenis layanan (instant atau reguler)
+                $type = (str_contains($serviceLower, 'instant') || str_contains($serviceLower, 'sameday')) ? 'instant' : 'reguler';
+
                 $pricing[] = [
                     'courier_name' => strtoupper($rate['courier_code']),
-                    'courier_service_name' => $rate['courier_service_name'] ?? $rate['service_name'],
+                    'courier_service_name' => $serviceName,
                     'price' => (int) $rate['price'],
-                    'shipment_duration' => $rate['duration'] ?? '1-3 hari'
+                    'shipment_duration' => $rate['duration'] ?? '1-3 hari',
+                    'type' => $type
                 ];
             }
         }
 
         return response()->json([
             'success' => true,
-            'pricing' => $pricing
+            'pricing' => $pricing,
+            'is_jabodetabek' => $isJabodetabek
         ]);
     }
 
     public function process(Request $request)
     {
+        // Blokir proses checkout jika user sedang disuspend
+        if (auth()->check() && auth()->user()->status === 'suspended') {
+            return redirect()->back()->with('error', 'Akun Anda sedang disuspend/ditangguhkan. Anda dapat menjelajahi website ini, tetapi tidak diizinkan untuk melakukan checkout.');
+        }
+
         $request->validate([
             'country' => 'required|string',
             'first_name' => 'required|string|max:255',
@@ -123,10 +268,16 @@ class CheckoutController extends Controller
                 $subtotal += $item['price'] * $item['quantity'];
             }
 
-            $shippingCost = $request->shipping_cost;
-            $totalPrice = $subtotal + $shippingCost;
+            $discount = 0;
+            $coupon = session()->get('coupon');
+            if ($coupon) {
+                $discount = ($coupon['type'] == 'percentage') ? ($subtotal * $coupon['value']) / 100 : $coupon['value'];
+            }
+            $subtotalAfterDiscount = max(0, $subtotal - $discount);
 
-            // 1. Validasi Atomic & Lock Row Produk
+            $shippingCost = $request->shipping_cost;
+            $totalPrice = $subtotalAfterDiscount + $shippingCost;
+
             foreach ($cartItems as $id => $item) {
                 $product = Product::lockForUpdate()->find($id);
 
@@ -134,7 +285,6 @@ class CheckoutController extends Controller
                     throw new \Exception("Produk '{$item['name']}' sudah tidak tersedia.");
                 }
 
-                // Hitung ulang stok efektif secara akurat di dalam database lock
                 $reservedStock = \App\Models\LimitStock::where('product_id', $product->id)
                     ->where('expires_at', '>', now())
                     ->sum('quantity');
@@ -146,8 +296,6 @@ class CheckoutController extends Controller
                 }
             }
 
-
-            // 2. Buat Order
             $order = Order::create([
                 'user_id' => auth()->id(),
                 'country' => $request->country,
@@ -170,7 +318,6 @@ class CheckoutController extends Controller
                 'status' => 'pending',
             ]);
 
-            // SIMPAN DETAIL ITEM KE ORDER_ITEMS
             foreach ($cartItems as $id => $item) {
                 \App\Models\OrderItem::create([
                     'order_id' => $order->id,
@@ -179,7 +326,6 @@ class CheckoutController extends Controller
                     'price' => $item['price'],
                 ]);
 
-                // Masukkan ke limit_stocks (Hold Stok)
                 \App\Models\LimitStock::create([
                     'user_id' => auth()->id(),
                     'product_id' => $id,
@@ -189,14 +335,43 @@ class CheckoutController extends Controller
                 ]);
             }
 
-            session()->forget('cart');
+            session()->forget(['cart', 'coupon']);
             DB::commit();
 
-            return redirect()->route('shop')->with('success', 'Checkout berhasil! Silakan selesaikan pembayaran dalam waktu 30 menit.');
+            return redirect()->route('shop')->with([
+                'order_success_popup' => true,
+                'order_id' => $order->id,
+                'payment_method' => $request->payment_method,
+                'total_price' => $totalPrice
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
+    }
+
+    public function userDashboard()
+    {
+        $userId = auth()->id();
+
+        $orders = Order::with('orderItems.product')->where('user_id', $userId)->latest()->get();
+        
+        $pendingOrders = Order::with('orderItems.product')
+            ->where('user_id', $userId)
+            ->where('status', 'pending')
+            ->latest()->get();
+        
+        $processingOrders = Order::with('orderItems.product')
+            ->where('user_id', $userId)
+            ->whereIn('status', ['verifikasi', 'paid', 'packing', 'shipping', 'shipped'])
+            ->latest()->get();
+            
+        $completedOrders = Order::with('orderItems.product')
+            ->where('user_id', $userId)
+            ->whereIn('status', ['completed', 'cancelled'])
+            ->latest()->get();
+
+        return view('user.dashboard', compact('orders', 'pendingOrders', 'processingOrders', 'completedOrders'));
     }
 }
