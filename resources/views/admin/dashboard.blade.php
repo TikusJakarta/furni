@@ -20,32 +20,48 @@
 
     <div class="untree_co-section before-footer-section">
         <div class="container">
-            
-            <!-- Tombol Navigasi Cepat / Quick Links -->
-            <div class="row mb-5">
+
+            <!-- ADMIN NAVIGATION TABS (Navbar Cepat Antar Menu) -->
+            <div class="row mb-4">
                 <div class="col-md-12">
-                    <div class="card border-0 shadow-sm p-4 bg-light">
-                        <h4 class="mb-3 text-black font-weight-bold">
-                            {{ $settings['admin_quick_menu_title'] ?? 'Menu Cepat Admin' }}
-                        </h4>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('admin.products.index') }}" class="btn btn-primary me-2 mb-2 px-3 py-2" style="font-size: 15px !important; color: #ffffff !important; display: inline-flex; align-items: center;">
-                                <i class="fa fa-box me-2"></i> Kelola Produk
-                            </a>
-                            <a href="{{ route('admin.orders.index') }}" class="btn btn-dark me-2 mb-2 px-3 py-2" style="font-size: 15px !important; color: #ffffff !important; display: inline-flex; align-items: center;">
-                                <i class="fa fa-shopping-cart me-2"></i> Kelola Pesanan
-                            </a>
-                            <a href="{{ route('admin.coupons.index') }}" class="btn btn-success me-2 mb-2 px-3 py-2" style="font-size: 15px !important; color: #ffffff !important; display: inline-flex; align-items: center;">
-                                <i class="fa fa-tags me-2"></i> Kelola Kupon Promo
-                            </a>
-                            <!-- Tombol Kelola Pengguna dipaksa warna kuning terang & teks hitam -->
-                            <a href="{{ route('admin.users.index') }}" class="me-2 mb-2 px-3 py-2 text-dark" style="background-color: #ffc107 !important; color: #000000 !important; font-size: 15px !important; font-weight: 500; border-radius: 5px; display: inline-flex; align-items: center; text-decoration: none;">
-                                <i class="fa fa-users me-2"></i> Kelola Pengguna
-                            </a>
-                            <a href="{{ route('admin.settings.index') }}" class="btn btn-secondary me-2 mb-2 px-3 py-2" style="font-size: 15px !important; color: #ffffff !important; display: inline-flex; align-items: center;">
-                                <i class="fa fa-cogs me-2"></i> CMS Pengaturan Web
-                            </a>
-                        </div>
+                    <div class="card border-0 shadow-sm bg-white p-2">
+                        <ul class="nav nav-pills nav-fill gap-2">
+                            <li class="nav-item">
+                                <a href="{{ route('admin.dashboard') }}" class="nav-link active fw-bold py-2">
+                                    <i class="fa fa-home me-1"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.products.index') }}" class="nav-link text-dark fw-bold py-2">
+                                    <i class="fa fa-box me-1"></i> Produk
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.orders.index') }}" class="nav-link text-dark fw-bold py-2">
+                                    <i class="fa fa-shopping-cart me-1"></i> Pesanan
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.returns.index') }}" class="nav-link text-dark fw-bold py-2">
+                                    <i class="fa fa-undo me-1"></i> Retur
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.coupons.index') }}" class="nav-link text-dark fw-bold py-2">
+                                    <i class="fa fa-tags me-1"></i> Kupon
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.users.index') }}" class="nav-link text-dark fw-bold py-2">
+                                    <i class="fa fa-users me-1"></i> Pengguna
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ route('admin.settings.index') }}" class="nav-link text-dark fw-bold py-2">
+                                    <i class="fa fa-cogs me-1"></i> Pengaturan
+                                </a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -102,27 +118,27 @@
                             </thead>
                             <tbody>
                                 @forelse($recentOrders as $order)
-                                <tr>
-                                    <td><strong>#{{ $order->id }}</strong></td>
-                                    <td>{{ $order->first_name }} {{ $order->last_name }}</td>
-                                    <td>Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
-                                    <td>
-                                        <span class="badge 
-                                            @if($order->status == 'paid') bg-success 
-                                            @elseif($order->status == 'pending') bg-warning text-dark 
-                                            @elseif($order->status == 'completed') bg-info text-dark
-                                            @else bg-danger @endif">
-                                            {{ strtoupper($order->status) }}
-                                        </span>
-                                    </td>
-                                    <td>{{ $order->created_at->format('d M Y, H:i') }}</td>
-                                </tr>
+                                    <tr>
+                                        <td><strong>#{{ $order->id }}</strong></td>
+                                        <td>{{ $order->first_name }} {{ $order->last_name }}</td>
+                                        <td>Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                    @if($order->status == 'paid') bg-success 
+                                                    @elseif($order->status == 'pending') bg-warning text-dark 
+                                                    @elseif($order->status == 'completed') bg-info text-dark
+                                                    @else bg-danger @endif">
+                                                {{ strtoupper($order->status) }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $order->created_at->format('d M Y, H:i') }}</td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-4 text-muted">
-                                        {{ $settings['admin_empty_orders'] ?? 'Belum ada pesanan masuk.' }}
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            {{ $settings['admin_empty_orders'] ?? 'Belum ada pesanan masuk.' }}
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>

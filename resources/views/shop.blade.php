@@ -28,6 +28,25 @@
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
+            <!-- Form Pencarian Produk -->
+            <div class="row mb-5">
+                <div class="col-md-6 mx-auto">
+                    <form action="{{ route('shop') }}" method="GET">
+                        <div class="input-group shadow-sm">
+                            <input type="text" name="search" class="form-control form-control-lg"
+                                placeholder="Cari nama produk furniture..." value="{{ request('search') }}">
+                            <button class="btn btn-primary text-white px-4" type="submit">
+                                <i class="fa fa-search me-1"></i> Cari
+                            </button>
+                            @if(request('search'))
+                                <a href="{{ route('shop') }}"
+                                    class="btn btn-outline-secondary d-flex align-items-center">Reset</a>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="row">
                 @foreach($products as $product)
                     <div class="col-12 col-md-4 col-lg-3 mb-5">
@@ -39,8 +58,7 @@
                                 data-price="Rp {{ number_format($product->price, 0, ',', '.') }}"
                                 data-description="{{ $product->description ?? 'Belum ada deskripsi untuk produk ini.' }}"
                                 data-weight="{{ $product->weight >= 1000 ? ($product->weight / 1000) . ' kg' : $product->weight . ' gram' }}"
-                                data-stock="{{ $product->effective_stock }}" 
-                                data-image="{{ asset($product->image) }}"
+                                data-stock="{{ $product->effective_stock }}" data-image="{{ asset($product->image) }}"
                                 data-rating="{{ number_format($product->averageRating(), 1) }}"
                                 data-reviews-count="{{ $product->reviews->count() }}"
                                 data-cart-url="{{ route('cart.add', $product->id) }}">
@@ -94,7 +112,7 @@
                         <!-- Informasi Produk -->
                         <div class="col-md-6 pl-md-4">
                             <h3 id="modal-name" class="text-black font-weight-bold mb-2"></h3>
-                            
+
                             <!-- Bagian Rating Bintang di Modal -->
                             <div class="mb-2">
                                 <span id="modal-rating-stars" class="text-warning"></span>

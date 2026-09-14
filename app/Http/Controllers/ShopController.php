@@ -8,13 +8,18 @@ use App\Models\Product;
 
 class ShopController extends Controller
 {
-    public function index()
-    {
-        $settings = Setting::pluck('value', 'key')->all();
-        $products = Product::all();
+    public function index(Request $request)
+{
+    $settings = Setting::pluck('value', 'key')->all();
+    $search = $request->input('search');
 
-        return view('shop', compact('settings', 'products'));
-    }
+    $products = Product::when($search, function ($query, $search) {
+        return $query->where('name', 'like', '%' . $search . '%')
+                     ->orWhere('description', 'like', '%' . $search . '%');
+    })->latest()->get();
+
+    return view('shop', compact('settings', 'products', 'search'));
+}
 
     public function show($id)
     {

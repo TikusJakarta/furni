@@ -139,15 +139,68 @@
                                 <div class="col-md-6">
                                     <label for="c_state_country" class="text-black">State / City <span
                                             class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="c_state_country" name="state_country"
-                                        required value="{{ old('state_country') }}">
+                                    <input type="text" class="form-control" id="c_state_country" name="state_country" list="city-options"
+                                        required value="{{ old('state_country') }}" placeholder="Ketik nama kota...">
+                                    
+                                    <!-- Datalist Pilihan Kota -->
+                                    <datalist id="city-options">
+                                        <option value="Jakarta Pusat" data-postal="10110">
+                                        <option value="Jakarta Selatan" data-postal="12110">
+                                        <option value="Jakarta Barat" data-postal="11110">
+                                        <option value="Jakarta Timur" data-postal="13110">
+                                        <option value="Jakarta Utara" data-postal="14110">
+                                        <option value="Bandung" data-postal="40111">
+                                        <option value="Surabaya" data-postal="60119">
+                                        <option value="Medan" data-postal="20111">
+                                        <option value="Semarang" data-postal="50134">
+                                        <option value="Yogyakarta" data-postal="55111">
+                                        <option value="Malang" data-postal="65111">
+                                        <option value="Tangerang" data-postal="15111">
+                                        <option value="Bekasi" data-postal="17111">
+                                        <option value="Depok" data-postal="16411">
+                                        <option value="Bogor" data-postal="16111">
+                                    </datalist>
                                     @error('state_country') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="c_postal_zip" class="text-black">Postal / Zip <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="c_postal_zip" name="postal_zip" required
-                                        value="{{ old('postal_zip') }}">
+                                    <label for="c_postal_zip" class="text-black fw-bold">Postal / Zip <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-muted border-end-0">
+                                            <i class="fa fa-map-marker-alt"></i>
+                                        </span>
+                                        <input type="text" 
+                                               class="form-control border-start-0 ps-0" 
+                                               id="c_postal_zip" 
+                                               name="postal_zip" 
+                                               list="postal-options"
+                                               placeholder="Pilih/ketik kode pos" 
+                                               maxlength="5" 
+                                               pattern="[0-9]*" 
+                                               inputmode="numeric" 
+                                               required 
+                                               value="{{ old('postal_zip') }}">
+                                    </div>
+                                    
+                                    <!-- Datalist Pilihan Kode Pos -->
+                                    <datalist id="postal-options">
+                                        <option value="10110" data-city="Jakarta Pusat">
+                                        <option value="12110" data-city="Jakarta Selatan">
+                                        <option value="11110" data-city="Jakarta Barat">
+                                        <option value="13110" data-city="Jakarta Timur">
+                                        <option value="14110" data-city="Jakarta Utara">
+                                        <option value="40111" data-city="Bandung">
+                                        <option value="60119" data-city="Surabaya">
+                                        <option value="20111" data-city="Medan">
+                                        <option value="50134" data-city="Semarang">
+                                        <option value="55111" data-city="Yogyakarta">
+                                        <option value="65111" data-city="Malang">
+                                        <option value="15111" data-city="Tangerang">
+                                        <option value="17111" data-city="Bekasi">
+                                        <option value="16411" data-city="Depok">
+                                        <option value="16111" data-city="Bogor">
+                                    </datalist>
+
+                                    <small class="text-muted mt-1 d-block" style="font-size: 11px;">Bisa pilih dari kota atau kode pos.</small>
                                     @error('postal_zip') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                             </div>
@@ -191,52 +244,6 @@
                                         <button type="button" id="btn-save-address" class="btn btn-primary btn-sm btn-block py-2 text-white font-weight-bold" style="background-color: #2f3b4c; border-color: #2f3b4c;">
                                             Simpan Alamat
                                         </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Opsi Alamat Pengiriman Berbeda -->
-                            <div class="form-group">
-                                <label for="c_ship_different_address" class="text-black" data-bs-toggle="collapse"
-                                    href="#ship_different_address" role="button" aria-expanded="false">
-                                    <input type="checkbox" value="1" id="c_ship_different_address"
-                                        name="ship_different_address" {{ old('ship_different_address') ? 'checked' : '' }}>
-                                    Ship To A Different Address?
-                                </label>
-                                <div class="collapse {{ old('ship_different_address') ? 'show' : '' }}"
-                                    id="ship_different_address">
-                                    <div class="py-2">
-                                        <div class="form-group">
-                                            <label for="c_diff_country" class="text-black">Country</label>
-                                            <select id="c_diff_country" name="diff_country" class="form-control">
-                                                <option value="">Select a country</option>
-                                                @foreach($countriesList as $country)
-                                                    <option value="{{ $country }}" {{ old('diff_country') == $country ? 'selected' : '' }}>{{ $country }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group row">
-                                            <div class="col-md-6">
-                                                <label for="c_diff_fname" class="text-black">First Name</label>
-                                                <input type="text" class="form-control" id="c_diff_fname"
-                                                    name="diff_first_name" value="{{ old('diff_first_name') }}">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="c_diff_lname" class="text-black">Last Name</label>
-                                                <input type="text" class="form-control" id="c_diff_lname"
-                                                    name="diff_last_name" value="{{ old('diff_last_name') }}">
-                                            </div>
-                                        </div>
-
-                                        <div class="form-group row">
-                                            <div class="col-md-12">
-                                                <label for="c_diff_address" class="text-black">Address</label>
-                                                <input type="text" class="form-control" id="c_diff_address"
-                                                    name="diff_address" placeholder="Street address"
-                                                    value="{{ old('diff_address') }}">
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -287,16 +294,25 @@
                                         <thead>
                                             <tr>
                                                 <th>Product</th>
-                                                <th>Total</th>
+                                                <th class="text-end">Total</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @forelse($cartItems ?? [] as $id => $item)
                                                 <tr>
-                                                    <td>{{ $item['name'] }} <strong class="mx-2">x</strong>
-                                                        {{ $item['quantity'] }}
+                                                    <td class="align-middle">
+                                                        <div class="d-flex align-items-center">
+                                                            @if(!empty($item['image']))
+                                                                <img src="{{ asset($item['image']) }}" alt="{{ $item['name'] }}" style="width: 45px; height: 45px; object-fit: cover;" class="rounded me-2 border flex-shrink-0">
+                                                            @endif
+                                                            <div style="line-height: 1.3;">
+                                                                <span class="text-black d-block">{{ $item['name'] }}</span> 
+                                                                <strong class="text-muted" style="font-size: 13px;">x {{ $item['quantity'] }}</strong>
+                                                            </div>
+                                                        </div>
                                                     </td>
-                                                    <td>Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
+                                                    <td class="align-middle text-end text-nowrap">
+                                                        Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
                                                     </td>
                                                 </tr>
                                             @empty
@@ -306,7 +322,7 @@
                                             @endforelse
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Cart Subtotal</strong></td>
-                                                <td class="text-black" id="subtotal-text"
+                                                <td class="text-black text-end" id="subtotal-text"
                                                     data-subtotal="{{ $subtotal ?? 0 }}">Rp
                                                     {{ number_format($subtotal ?? 0, 0, ',', '.') }}
                                                 </td>
@@ -322,17 +338,17 @@
 
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Shipping Cost</strong></td>
-                                                <td class="text-black" id="shipping-cost-text">Rp 0</td>
+                                                <td class="text-black text-end" id="shipping-cost-text">Rp 0</td>
                                             </tr>
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Order Total</strong></td>
-                                                <td class="text-black font-weight-bold"><strong id="order-total-text">Rp
+                                                <td class="text-black font-weight-bold text-end"><strong id="order-total-text">Rp
                                                         {{ number_format($total ?? 0, 0, ',', '.') }}</strong></td>
                                             </tr>
                                         </tbody>
                                     </table>
 
-                                    <!-- DROPDOWN PILIHAN KURIR -->
+                                    <!-- PILIHAN KURIR -->
                                     <div class="form-group mb-4">
                                         <label for="shipping_courier_select" class="text-black font-weight-bold">Pilih Kurir
                                             Pengiriman <span class="text-danger">*</span></label>
@@ -409,4 +425,52 @@
     <script src="{{ asset('js/map.js') }}"></script>
     <script src="{{ asset('js/coupon.js') }}"></script>
     <script src="{{ asset('js/checkout-address.js') }}"></script>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const cityInput = document.getElementById('c_state_country');
+            const postalInput = document.getElementById('c_postal_zip');
+            const cityDatalist = document.getElementById('city-options');
+            const postalDatalist = document.getElementById('postal-options');
+
+            // 1. Jika Kota diketik/dipilih -> Otomatis isi Kode Pos
+            if (cityInput && postalInput && cityDatalist) {
+                cityInput.addEventListener('input', function() {
+                    const val = this.value;
+                    const options = cityDatalist.options;
+                    
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].value === val) {
+                            const postal = options[i].getAttribute('data-postal');
+                            if (postal) {
+                                postalInput.value = postal;
+                            }
+                            break;
+                        }
+                    }
+                });
+            }
+
+            // 2. Jika Kode Pos diketik/dipilih -> Otomatis isi Kota
+            if (postalInput && cityInput && postalDatalist) {
+                postalInput.addEventListener('input', function() {
+                    // Batasi hanya angka maksimal 5 digit
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);
+
+                    const val = this.value;
+                    const options = postalDatalist.options;
+
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].value === val) {
+                            const city = options[i].getAttribute('data-city');
+                            if (city) {
+                                cityInput.value = city;
+                            }
+                            break;
+                        }
+                    }
+                });
+            }
+        });
+    </script>
 @endsection

@@ -12,6 +12,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\OrderReturnController;
 
 // RUTE PUBLIK
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -40,6 +41,7 @@ Route::post('/product/{id}/review', [ReviewController::class, 'store'])->name('p
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/my-orders', [CheckoutController::class, 'userDashboard'])->name('user.dashboard');
+    Route::post('/order/{id}/return', [OrderReturnController::class, 'store'])->name('order.return');
 
     // Rute Cart
     Route::get('/cart', [CartController::class, 'index'])->name('cart');
@@ -96,6 +98,10 @@ Route::middleware(['auth'])->group(function () {
         // Manajemen Pengguna / User (Suspend, Banned, Active)
         Route::get('/users', [AdminController::class, 'usersIndex'])->name('users.index');
         Route::post('/users/{id}/status', [AdminController::class, 'usersUpdateStatus'])->name('users.updateStatus');
+
+        // Manajemen Retur Admin (Diperbaiki di sini)
+        Route::get('/returns', [AdminController::class, 'returnsIndex'])->name('returns.index');
+        Route::post('/returns/{id}/update', [AdminController::class, 'returnsUpdateStatus'])->name('returns.update');
 
         // CMS Pengaturan Web
         Route::get('/settings', [AdminController::class, 'settingsIndex'])->name('settings.index');

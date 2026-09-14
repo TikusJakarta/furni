@@ -253,4 +253,25 @@ class AdminController extends Controller
 
         return redirect()->back()->with('success', 'Status akun ' . $user->name . ' berhasil diperbarui menjadi ' . strtoupper($user->status) . '!');
     }
+
+    // --- 6. MANAJEMEN RETUR / REFUND ---
+    public function returnsIndex()
+    {
+        $settings = Setting::pluck('value', 'key')->all();
+        $returns = \App\Models\OrderReturn::with('user', 'order')->latest()->get();
+        return view('admin.returns.index', compact('settings', 'returns'));
+    }
+
+    public function returnsUpdateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:approved,rejected'
+        ]);
+
+        $return = \App\Models\OrderReturn::findOrFail($id);
+        $return->status = $request->status;
+        $return->save();
+
+        return redirect()->back()->with('success', 'Status pengajuan retur berhasil diperbarui!');
+    }
 }

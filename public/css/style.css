@@ -5,17 +5,19 @@
 * License: https://creativecommons.org/licenses/by/3.0/
 */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-body {
-  overflow-x: hidden;
-  position: relative; }
 
-body {
+/* Pengaman Utama: Cegah layar meluber/bisa digeser ke samping */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden !important;
+  position: relative;
   font-family: "Inter", sans-serif;
   font-weight: 400;
   line-height: 28px;
   color: #6a6a6a;
   font-size: 14px;
-  background-color: #eff2f1; }
+  background-color: #eff2f1;
+}
 
 a {
   text-decoration: none;
@@ -23,7 +25,7 @@ a {
   -o-transition: .3s all ease;
   transition: .3s all ease;
   color: #2f2f2f;
-  text-decoration: underline; }
+}
   a:hover {
     color: #2f2f2f;
     text-decoration: none; }
@@ -95,9 +97,10 @@ a {
       .custom-navbar .custom-navbar-cta li:first-child {
         margin-right: 20px; }
 
+/* Hero Section (Padding & Mobile Image Fix) */
 .hero {
   background: #3b5d50;
-  padding: calc(4rem - 30px) 0 0rem 0; }
+  padding: 3rem 0 2rem 0; }
   @media (min-width: 768px) {
     .hero {
       padding: calc(4rem - 30px) 0 4rem 0; } }
@@ -119,7 +122,7 @@ a {
         font-size: 54px; } }
   .hero p {
     color: rgba(255, 255, 255, 0.5);
-    margin-botom: 30px; }
+    margin-bottom: 30px; }
   .hero .hero-img-wrap {
     position: relative; }
     .hero .hero-img-wrap img {
@@ -129,6 +132,14 @@ a {
       z-index: 2;
       max-width: 780px;
       left: -20px; }
+      @media (max-width: 767.98px) {
+        .hero .hero-img-wrap img {
+          left: 0 !important;
+          right: 0 !important;
+          max-width: 100% !important;
+          height: auto;
+        }
+      }
       @media (min-width: 768px) {
         .hero .hero-img-wrap img {
           right: 0px;
@@ -421,7 +432,7 @@ a {
   padding: 3rem 0 7rem 0; }
 
 .testimonial-slider-wrap {
-  position: relative; }
+  position: relative !important; }
   .testimonial-slider-wrap .tns-inner {
     padding-top: 30px; }
   .testimonial-slider-wrap .item .testimonial-block blockquote {
@@ -440,35 +451,54 @@ a {
     font-weight: 700;
     color: #2f2f2f;
     margin-bottom: 0; }
+
+.testimonial-slider-wrap #testimonial-nav {
+    position: absolute !important;
+    top: 50% !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: translateY(-50%) !important;
+    z-index: 999 !important;
+    display: none !important;
+    width: 100% !important;
+    pointer-events: none !important;
+}
+@media (min-width: 768px) {
   .testimonial-slider-wrap #testimonial-nav {
-    position: absolute;
-    top: 50%;
-    z-index: 99;
-    width: 100%;
-    display: none; }
-    @media (min-width: 768px) {
-      .testimonial-slider-wrap #testimonial-nav {
-        display: block; } }
-    .testimonial-slider-wrap #testimonial-nav > span {
-      cursor: pointer;
-      position: absolute;
-      width: 58px;
-      height: 58px;
-      line-height: 58px;
-      border-radius: 50%;
-      background: rgba(59, 93, 80, 0.1);
-      color: #2f2f2f;
-      -webkit-transition: .3s all ease;
-      -o-transition: .3s all ease;
-      transition: .3s all ease; }
-      .testimonial-slider-wrap #testimonial-nav > span:hover {
-        background: #3b5d50;
-        color: #ffffff; }
-    .testimonial-slider-wrap #testimonial-nav .prev {
-      left: -10px; }
-    .testimonial-slider-wrap #testimonial-nav .next {
-      right: 0; }
-  .testimonial-slider-wrap .tns-nav {
+    display: block !important; } 
+}
+
+.testimonial-slider-wrap #testimonial-nav > span {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    cursor: pointer !important;
+    width: 50px !important;
+    height: 50px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    background: rgba(59, 93, 80, 0.15) !important;
+    color: #2f2f2f !important;
+    pointer-events: auto !important;
+    transition: .3s all ease !important;
+}
+
+.testimonial-slider-wrap #testimonial-nav > span:hover {
+    background: #3b5d50 !important;
+    color: #ffffff !important;
+}
+
+.testimonial-slider-wrap #testimonial-nav .prev {
+    left: -25px !important;
+}
+
+.testimonial-slider-wrap #testimonial-nav .next {
+    right: -25px !important;
+}
+
+.testimonial-slider-wrap .tns-nav {
     position: absolute;
     bottom: -50px;
     left: 50%;
@@ -620,8 +650,13 @@ a {
     .footer-section .border-top.copyright {
       font-size: 14px !important; }
 
+/* Untree Section (Responsive Padding) */
 .untree_co-section {
-  padding: 7rem 0; }
+  padding: 4rem 0; }
+  @media (min-width: 992px) {
+    .untree_co-section {
+      padding: 7rem 0; }
+  }
 
 .form-control {
   height: 50px;
@@ -710,53 +745,6 @@ textarea {
     border-radius: 50%;
     background: rgba(59, 93, 80, 0.2); }
 
-    /* Fix total untuk panah testimonial yang hilang */
-.testimonial-slider-wrap {
-    position: relative !important;
-}
-
-.testimonial-slider-wrap #testimonial-nav {
-    position: absolute !important;
-    top: 50% !important;
-    left: 0 !important;
-    right: 0 !important;
-    transform: translateY(-50%) !important;
-    z-index: 999 !important;
-    display: block !important;
-    width: 100% !important;
-    pointer-events: none !important;
-}
-
-.testimonial-slider-wrap #testimonial-nav > span {
-    position: absolute !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    cursor: pointer !important;
-    width: 50px !important;
-    height: 50px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 50% !important;
-    background: rgba(59, 93, 80, 0.15) !important;
-    color: #2f2f2f !important;
-    pointer-events: auto !important;
-    transition: .3s all ease !important;
-}
-
-.testimonial-slider-wrap #testimonial-nav > span:hover {
-    background: #3b5d50 !important;
-    color: #ffffff !important;
-}
-
-.testimonial-slider-wrap #testimonial-nav .prev {
-    left: -25px !important;
-}
-
-.testimonial-slider-wrap #testimonial-nav .next {
-    right: -25px !important;
-}
-
 /* Styling Tombol Qty & Add to Cart di Modal */
 .modal-qty-group {
     width: 140px;
@@ -792,4 +780,119 @@ textarea {
     height: 45px;
     border-radius: 6px;
     font-weight: 600;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.untree_co-section {
+  flex: 1;
+}
+
+.footer-section {
+  margin-top: 180px;
+}
+
+.footer-section .sofa-img {
+  top: -200px !important;
+}
+
+body:has(#email):has(#password) .footer-section .sofa-img {
+  display: none !important;
+}
+
+.site-blocks-table {
+  background: #ffffff !important;
+  border-radius: 14px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04) !important;
+  padding: 10px !important;
+  margin-bottom: 25px !important;
+  overflow-x: auto !important;
+}
+
+.site-blocks-table table {
+  width: 100%;
+  min-width: 500px !important; 
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.site-blocks-table thead th {
+  background: #f8f9fa !important;
+  color: #3b5d50 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 10px !important;
+  border: none !important;
+}
+
+.site-blocks-table td {
+  padding: 12px 10px !important;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f4 !important;
+  color: #2f2f2f !important;
+  font-size: 13px !important;
+}
+
+.site-blocks-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.site-blocks-table .product-thumbnail img {
+  border-radius: 8px;
+  max-width: 55px !important;
+  height: auto;
+}
+
+.site-blocks-table .input-group {
+  max-width: 100px !important;
+  margin: 0 auto;
+}
+
+.site-blocks-table .input-group .form-control {
+  height: 35px !important;
+  font-size: 13px !important;
+  text-align: center;
+}
+
+.site-blocks-table .input-group .btn {
+  height: 35px !important;
+  padding: 0 8px !important;
+  font-size: 13px !important;
+}
+
+.payment-total-box {
+  background-color: #f8f9fa;
+  border: 1px solid #edf2f1;
+}
+
+.payment-total-price {
+  color: #3b5d50 !important;
+}
+
+.payment-qr-img {
+  max-width: 190px;
+}
+
+.payment-bank-card {
+  background: linear-gradient(135deg, #3b5d50 0%, #2f4a3f 100%);
+  box-shadow: 0 8px 20px rgba(59, 93, 80, 0.2);
+}
+
+.payment-rek-number {
+  letter-spacing: 1px;
+}
+
+.btn-payment-main {
+  background-color: #3b5d50 !important;
+  border: none !important;
+}
+
+.btn-payment-main:hover {
+  background-color: #314d43 !important;
 }
