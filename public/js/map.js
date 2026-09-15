@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const latInput = document.getElementById('latitude');
     const lngInput = document.getElementById('longitude');
     
-    // Perbaikan selector agar sinkron dengan file Blade
+    // Selector elemen form
     const cityInput = document.querySelector('input[name="state_country"]') || document.getElementById('c_state_country') || document.getElementById('city');
     const addressInput = document.querySelector('input[name="address"]') || document.querySelector('textarea[name="address"]') || document.getElementById('c_address');
     const postalInput = document.querySelector('input[name="postal_zip"]') || document.getElementById('c_postal_zip');
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let initialLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
     let initialLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
 
-    // Inisialisasi Peta Leaflet
+    // 1. Inisialisasi Peta Leaflet
     map = L.map('map').setView([initialLat, initialLng], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -42,18 +42,44 @@ document.addEventListener('DOMContentLoaded', function () {
         fetchShippingRates(lat, lng, cityName);
     }
 
-    // Event saat marker digeser
+    // 2. Integrasi Kotak Search / Geosearch (OpenStreetMap Provider)
+    if (window.GeoSearch) {
+        const provider = new window.GeoSearch.OpenStreetMapProvider();
+        const searchControl = new window.GeoSearch.GeoSearchControl({
+            provider: provider,
+            style: 'bar',
+            autoComplete: true,
+            autoCompleteDelay: 250,
+            showMarker: false,
+            showPopup: false,
+            retainZoomLevel: false,
+            searchLabel: 'Ketik nama jalan, gedung, atau kota...',
+        });
+
+        map.addControl(searchControl);
+
+        map.on('geosearch/showlocation', function (result) {
+            const lat = result.location.y;
+            const lng = result.location.x;
+            const label = result.location.label;
+
+            if (addressInput && !addressInput.value) {
+                addressInput.value = label;
+            }
+
+            updatePosition(lat, lng);
+        });
+    }
+
     marker.on('dragend', function () {
         const pos = marker.getLatLng();
         updatePosition(pos.lat, pos.lng);
     });
 
-    // Event saat peta diklik
     map.on('click', function (e) {
         updatePosition(e.latlng.lat, e.latlng.lng);
     });
 
-    // Event jika input kota diketik/berubah manual
     if (cityInput) {
         cityInput.addEventListener('input', function () {
             const lat = latInput && latInput.value ? parseFloat(latInput.value) : initialLat;
@@ -62,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // EVENT: Jika User Memilih Alamat dari Dropdown Tersimpan
     const savedAddressSelect = document.getElementById('saved_address_select');
     if (savedAddressSelect) {
         savedAddressSelect.addEventListener('change', function() {
@@ -87,13 +112,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    calculateCartWeight();
     fetchShippingRates(initialLat, initialLng, cityInput ? cityInput.value : '');
 });
 
-// Fungsi untuk mengambil data ongkir via AJAX ke Backend
+// Fungsi untuk mengambil data ongkir via AJAX ke Backend (Include Total Weight Murni Database)
 function fetchShippingRates(lat, lng, cityName = '') {
     const courierSelect = document.getElementById('shipping_courier_select');
     if (!courierSelect) return;
+
+    const totalWeight = calculateCartWeight();
 
     courierSelect.innerHTML = '<option value="">Mencari pilihan kurir...</option>';
 
@@ -106,7 +134,8 @@ function fetchShippingRates(lat, lng, cityName = '') {
         body: JSON.stringify({ 
             latitude: lat, 
             longitude: lng, 
-            city: cityName 
+            city: cityName,
+            weight: totalWeight 
         })
     })
     .then(response => response.json())
@@ -149,6 +178,34 @@ function fetchShippingRates(lat, lng, cityName = '') {
         console.error('Error fetching shipping rates:', error);
         courierSelect.innerHTML = '<option value="">Gagal memuat kurir</option>';
     });
+}
+
+// Fungsi Helper untuk Menghitung & Memperbarui Tampilan Total Berat Murni dari Database
+function calculateCartWeight() {
+    let totalWeight = 0;
+    const cartItems = document.querySelectorAll('.cart-item-row'); 
+
+    if (cartItems.length > 0) {
+        cartItems.forEach(row => {
+            const weight = parseFloat(row.dataset.weight) || 0; // Berat satuan dari database
+            const qty = parseFloat(row.dataset.qty) || 1;       // Quantity produk
+            totalWeight += (weight * qty);
+        });
+    } else {
+        totalWeight = 0; 
+    }
+
+    const weightDisplayEl = document.getElementById('total-weight-amount');
+    if (weightDisplayEl) {
+        weightDisplayEl.dataset.weight = totalWeight;
+        if (totalWeight >= 1000) {
+            weightDisplayEl.innerText = (totalWeight / 1000) + ' kg';
+        } else {
+            weightDisplayEl.innerText = totalWeight + ' gram';
+        }
+    }
+
+    return totalWeight;
 }
 
 // Event untuk tombol Simpan Alamat
@@ -212,12 +269,10 @@ document.addEventListener('click', function (e) {
     }
 });
 
-// Format angka ke Rupiah
 function numberFormat(number) {
     return new Intl.NumberFormat('id-ID').format(number);
 }
 
-// Kalkulasi otomatis Total Harga saat kurir dipilih
 document.addEventListener('change', function(e) {
     if (e.target && e.target.id === 'shipping_courier_select') {
         const selectedOption = e.target.options[e.target.selectedIndex];

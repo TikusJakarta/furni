@@ -16,15 +16,28 @@ class CheckoutController extends Controller
     public function index()
     {
         $settings = Setting::pluck('value', 'key')->all();
-        $cartItems = session()->get('cart', []);
+        $rawCart = session()->get('cart', []);
 
-        if (empty($cartItems)) {
+        if (empty($rawCart)) {
             return redirect()->route('shop')->with('swal_error', 'Keranjang belanjaan kamu masih kosong. Silakan pilih produk terlebih dahulu!');
         }
 
+        $cartItems = [];
         $subtotal = 0;
-        foreach ($cartItems as $item) {
-            $subtotal += $item['price'] * $item['quantity'];
+
+        foreach ($rawCart as $id => $item) {
+            // Ambil data produk asli dari database untuk memastikan berat & harga murni dari database
+            $product = Product::find($id);
+
+            $cartItems[$id] = [
+                'name' => $product->name ?? ($item['name'] ?? 'Produk'),
+                'price' => $product->price ?? ($item['price'] ?? 0),
+                'quantity' => $item['quantity'] ?? 1,
+                'weight' => $product->weight ?? ($item['weight'] ?? 0), // Berat murni dari database (gram)
+                'image' => $product->image ?? ($item['image'] ?? ''),
+            ];
+
+            $subtotal += $cartItems[$id]['price'] * $cartItems[$id]['quantity'];
         }
 
         // Perhitungan Diskon Kupon
@@ -98,7 +111,12 @@ class CheckoutController extends Controller
         }
 
         $cartItems = session()->get('cart', []);
-        $subtotal = array_sum(array_map(fn($item) => $item['price'] * $item['quantity'], $cartItems));
+        $subtotal = 0;
+        foreach ($cartItems as $id => $item) {
+            $product = Product::find($id);
+            $price = $product->price ?? ($item['price'] ?? 0);
+            $subtotal += $price * $item['quantity'];
+        }
 
         if ($subtotal < $coupon->min_spend) {
             $msg = 'Minimal belanja untuk kupon ini adalah Rp ' . number_format($coupon->min_spend, 0, ',', '.');
@@ -138,17 +156,23 @@ class CheckoutController extends Controller
             'city' => 'nullable|string', 
         ]);
 
-        $cartItems = session()->get('cart', []);
-        if (empty($cartItems)) {
+        $rawCart = session()->get('cart', []);
+        if (empty($rawCart)) {
             return response()->json(['success' => false, 'message' => 'Keranjang kosong'], 400);
         }
 
         $totalWeight = 0;
         $totalValue = 0;
-        foreach ($cartItems as $item) {
-            $weight = $item['weight'] ?? 1000;
-            $totalWeight += $weight * $item['quantity'];
-            $totalValue += $item['price'] * $item['quantity'];
+        
+        foreach ($rawCart as $id => $item) {
+            $product = Product::find($id);
+            // Ambil berat murni dari database produk
+            $weight = $product->weight ?? ($item['weight'] ?? 0); 
+            $price = $product->price ?? ($item['price'] ?? 0);
+            $qty = $item['quantity'] ?? 1;
+
+            $totalWeight += $weight * $qty;
+            $totalValue += $price * $qty;
         }
 
         // --- FILTER KURIR PINTAR (BITESHIP + FALLBACK KOORDINAT) ---
@@ -156,7 +180,6 @@ class CheckoutController extends Controller
         $jabodetabekKeywords = ['jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'];
         $isJabodetabek = false;
 
-        // 1. Cek dari teks kota yang diinput
         foreach ($jabodetabekKeywords as $keyword) {
             if (str_contains($city, $keyword)) {
                 $isJabodetabek = true;
@@ -164,18 +187,15 @@ class CheckoutController extends Controller
             }
         }
 
-        // 2. FALLBACK: Jika teks kota kosong/ngawur, cek berdasarkan koordinat GPS peta (Leaflet)
         if (!$isJabodetabek && $request->latitude && $request->longitude) {
             $lat = (float) $request->latitude;
             $lng = (float) $request->longitude;
             
-            // Batasan wilayah (Bounding Box) kasar untuk area Jabodetabek
             if ($lat >= -6.65 && $lat <= -6.10 && $lng >= 106.50 && $lng <= 107.10) {
                 $isJabodetabek = true;
             }
         }
 
-        // Jika di Jabodetabek berikan opsi Reguler & Instant, jika di luar hanya Reguler
         $couriers = $isJabodetabek 
             ? 'jne,sicepat,jnt,gojek,grab' 
             : 'jne,sicepat,jnt';
@@ -192,7 +212,7 @@ class CheckoutController extends Controller
                         'name' => 'Belanjaan Furni',
                         'description' => 'Produk Toko Furni',
                         'value' => (int) $totalValue,
-                        'weight' => (int) $totalWeight,
+                        'weight' => (int) max($totalWeight, 1), // Biteship minimal 1 gram
                         'quantity' => 1,
                     ]
                 ]
@@ -213,7 +233,6 @@ class CheckoutController extends Controller
                 $serviceName = $rate['courier_service_name'] ?? $rate['service_name'];
                 $serviceLower = strtolower($serviceName);
                 
-                // Klasifikasikan jenis layanan (instant atau reguler)
                 $type = (str_contains($serviceLower, 'instant') || str_contains($serviceLower, 'sameday')) ? 'instant' : 'reguler';
 
                 $pricing[] = [
@@ -235,7 +254,6 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
-        // Blokir proses checkout jika user sedang disuspend
         if (auth()->check() && auth()->user()->status === 'suspended') {
             return redirect()->back()->with('error', 'Akun Anda sedang disuspend/ditangguhkan. Anda dapat menjelajahi website ini, tetapi tidak diizinkan untuk melakukan checkout.');
         }
@@ -256,16 +274,18 @@ class CheckoutController extends Controller
             'shipping_courier' => 'required|string',
         ]);
 
-        $cartItems = session()->get('cart', []);
-        if (empty($cartItems)) {
+        $rawCart = session()->get('cart', []);
+        if (empty($rawCart)) {
             return redirect()->route('cart.index')->with('error', 'Keranjang belanja Anda kosong.');
         }
 
         DB::beginTransaction();
         try {
             $subtotal = 0;
-            foreach ($cartItems as $item) {
-                $subtotal += $item['price'] * $item['quantity'];
+            foreach ($rawCart as $id => $item) {
+                $product = Product::find($id);
+                $price = $product->price ?? ($item['price'] ?? 0);
+                $subtotal += $price * $item['quantity'];
             }
 
             $discount = 0;
@@ -278,7 +298,7 @@ class CheckoutController extends Controller
             $shippingCost = $request->shipping_cost;
             $totalPrice = $subtotalAfterDiscount + $shippingCost;
 
-            foreach ($cartItems as $id => $item) {
+            foreach ($rawCart as $id => $item) {
                 $product = Product::lockForUpdate()->find($id);
 
                 if (!$product) {
@@ -318,12 +338,15 @@ class CheckoutController extends Controller
                 'status' => 'pending',
             ]);
 
-            foreach ($cartItems as $id => $item) {
+            foreach ($rawCart as $id => $item) {
+                $product = Product::find($id);
+                $price = $product->price ?? ($item['price'] ?? 0);
+
                 \App\Models\OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $id,
                     'quantity' => $item['quantity'],
-                    'price' => $item['price'],
+                    'price' => $price,
                 ]);
 
                 \App\Models\LimitStock::create([

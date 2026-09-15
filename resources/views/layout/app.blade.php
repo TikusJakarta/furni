@@ -15,6 +15,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="{{ asset('css/tiny-slider.css') }}" rel="stylesheet">
     <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+    
 
     <title>
         @yield('title', ($settings['brand_name'] ?? 'Furni') . ' - Free Bootstrap 5 Template for Furniture and Interior Design')
@@ -81,19 +82,31 @@
 
                 <ul class="custom-navbar-cta navbar-nav mb-2 mb-md-0 ms-5">
                     <li>
-                        <a class="nav-link" href="{{ auth()->check() ? route('user.dashboard') : route('login') }}">
+                        <a class="nav-link px-0" href="{{ auth()->check() ? route('user.dashboard') : route('login') }}"
+                            title="Akun Saya">
                             <img src="{{ asset('images/user.svg') }}" alt="User">
                         </a>
                     </li>
+
                     @auth
-                        <!-- Tombol Logout Darurat -->
-                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-danger ms-2">Logout</button>
-                        </form>
+                        <!-- Tombol Logout Berbentuk Icon -->
+                        <li>
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="nav-link border-0 bg-transparent text-danger p-0"
+                                    title="Keluar" style="cursor: pointer;">
+                                    <i class="fa-solid fa-right-from-bracket fs-5"></i>
+                                </button>
+                            </form>
+                        </li>
                     @endauth
-                    <li><a class="nav-link" href="{{ route('cart') }}"><img src="{{ asset('images/cart.svg') }}"
-                                alt="Cart"></a></li>
+
+                    <li>
+                        <a class="nav-link px-0" href="{{ route('cart') }}" title="Keranjang">
+                            <img src="{{ asset('images/cart.svg') }}" alt="Cart">
+                        </a>
+                    </li>
+                </ul>
                 </ul>
             </div>
         </div>
@@ -227,6 +240,7 @@
     <script src="{{ asset('js/tiny-slider.js') }}"></script>
     <script src="{{ asset('js/custom.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
 
     @if(session('swal_error'))
         <script>

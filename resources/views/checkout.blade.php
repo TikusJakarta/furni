@@ -6,6 +6,8 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Leaflet Geosearch CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.0/dist/geosearch.css" />
 
     <!-- Start Hero Section -->
     <div class="hero">
@@ -142,7 +144,6 @@
                                     <input type="text" class="form-control" id="c_state_country" name="state_country" list="city-options"
                                         required value="{{ old('state_country') }}" placeholder="Ketik nama kota...">
                                     
-                                    <!-- Datalist Pilihan Kota -->
                                     <datalist id="city-options">
                                         <option value="Jakarta Pusat" data-postal="10110">
                                         <option value="Jakarta Selatan" data-postal="12110">
@@ -181,7 +182,6 @@
                                                value="{{ old('postal_zip') }}">
                                     </div>
                                     
-                                    <!-- Datalist Pilihan Kode Pos -->
                                     <datalist id="postal-options">
                                         <option value="10110" data-city="Jakarta Pusat">
                                         <option value="12110" data-city="Jakarta Selatan">
@@ -223,8 +223,7 @@
 
                             <div class="form-group mb-4">
                                 <label class="text-black font-weight-bold mb-2">Pin Location on Map (Optional)</label>
-                                <p class="text-muted small mb-2">Klik atau geser pin pada peta untuk menandai titik lokasi
-                                    pengiriman.</p>
+                                <p class="text-muted small mb-2">Ketik alamat di kolom pencarian peta atau klik langsung pada peta.</p>
                                 <div id="map" data-subtotal="{{ $total ?? ($subtotal ?? 0) }}"
                                     style="height: 320px; width: 100%; border-radius: 6px;" class="border"></div>
                                 <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
@@ -298,8 +297,19 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @php
+                                                $initialTotalWeight = 0;
+                                            @endphp
+
                                             @forelse($cartItems ?? [] as $id => $item)
-                                                <tr>
+                                                @php
+                                                    // Murni mengambil berat dari database (fallback ke 0 jika tidak diset)
+                                                    $itemWeight = $item['weight'] ?? 0;
+                                                    $itemQty = $item['quantity'] ?? 1;
+                                                    $initialTotalWeight += ($itemWeight * $itemQty);
+                                                @endphp
+                                                <!-- Baris Produk dengan Atribut Dinamis untuk Berat Database -->
+                                                <tr class="cart-item-row" data-weight="{{ $itemWeight }}" data-qty="{{ $itemQty }}">
                                                     <td class="align-middle">
                                                         <div class="d-flex align-items-center">
                                                             @if(!empty($item['image']))
@@ -307,12 +317,12 @@
                                                             @endif
                                                             <div style="line-height: 1.3;">
                                                                 <span class="text-black d-block">{{ $item['name'] }}</span> 
-                                                                <strong class="text-muted" style="font-size: 13px;">x {{ $item['quantity'] }}</strong>
+                                                                <strong class="text-muted" style="font-size: 13px;">x {{ $itemQty }}</strong>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td class="align-middle text-end text-nowrap">
-                                                        Rp {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}
+                                                        Rp {{ number_format($item['price'] * $itemQty, 0, ',', '.') }}
                                                     </td>
                                                 </tr>
                                             @empty
@@ -320,6 +330,17 @@
                                                     <td colspan="2" class="text-center">Keranjang belanja kosong.</td>
                                                 </tr>
                                             @endforelse
+
+                                            <!-- BARIS TOTAL BERAT DINAMIS -->
+                                            <tr>
+                                                <td class="text-black font-weight-bold"><strong>Total Berat</strong></td>
+                                                <td class="text-black text-end">
+                                                    <span id="total-weight-amount" data-weight="{{ $initialTotalWeight }}">
+                                                        {{ $initialTotalWeight >= 1000 ? ($initialTotalWeight / 1000) . ' kg' : $initialTotalWeight . ' gram' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Cart Subtotal</strong></td>
                                                 <td class="text-black text-end" id="subtotal-text"
@@ -419,9 +440,11 @@
         </div>
     </div>
 
-    <!-- Leaflet JS & Scripts -->
+    <!-- Leaflet JS & Geosearch Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-geosearch@3.11.0/dist/bundle.min.js"></script>
+
     <script src="{{ asset('js/map.js') }}"></script>
     <script src="{{ asset('js/coupon.js') }}"></script>
     <script src="{{ asset('js/checkout-address.js') }}"></script>
@@ -433,7 +456,6 @@
             const cityDatalist = document.getElementById('city-options');
             const postalDatalist = document.getElementById('postal-options');
 
-            // 1. Jika Kota diketik/dipilih -> Otomatis isi Kode Pos
             if (cityInput && postalInput && cityDatalist) {
                 cityInput.addEventListener('input', function() {
                     const val = this.value;
@@ -451,10 +473,8 @@
                 });
             }
 
-            // 2. Jika Kode Pos diketik/dipilih -> Otomatis isi Kota
             if (postalInput && cityInput && postalDatalist) {
                 postalInput.addEventListener('input', function() {
-                    // Batasi hanya angka maksimal 5 digit
                     this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);
 
                     const val = this.value;
