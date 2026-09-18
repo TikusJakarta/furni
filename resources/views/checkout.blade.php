@@ -144,23 +144,8 @@
                                     <input type="text" class="form-control" id="c_state_country" name="state_country" list="city-options"
                                         required value="{{ old('state_country') }}" placeholder="Ketik nama kota...">
                                     
-                                    <datalist id="city-options">
-                                        <option value="Jakarta Pusat" data-postal="10110">
-                                        <option value="Jakarta Selatan" data-postal="12110">
-                                        <option value="Jakarta Barat" data-postal="11110">
-                                        <option value="Jakarta Timur" data-postal="13110">
-                                        <option value="Jakarta Utara" data-postal="14110">
-                                        <option value="Bandung" data-postal="40111">
-                                        <option value="Surabaya" data-postal="60119">
-                                        <option value="Medan" data-postal="20111">
-                                        <option value="Semarang" data-postal="50134">
-                                        <option value="Yogyakarta" data-postal="55111">
-                                        <option value="Malang" data-postal="65111">
-                                        <option value="Tangerang" data-postal="15111">
-                                        <option value="Bekasi" data-postal="17111">
-                                        <option value="Depok" data-postal="16411">
-                                        <option value="Bogor" data-postal="16111">
-                                    </datalist>
+                                    {{-- Datalist kosong, diisi otomatis oleh JavaScript dari JSON --}}
+                                    <datalist id="city-options"></datalist>
                                     @error('state_country') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
@@ -182,23 +167,8 @@
                                                value="{{ old('postal_zip') }}">
                                     </div>
                                     
-                                    <datalist id="postal-options">
-                                        <option value="10110" data-city="Jakarta Pusat">
-                                        <option value="12110" data-city="Jakarta Selatan">
-                                        <option value="11110" data-city="Jakarta Barat">
-                                        <option value="13110" data-city="Jakarta Timur">
-                                        <option value="14110" data-city="Jakarta Utara">
-                                        <option value="40111" data-city="Bandung">
-                                        <option value="60119" data-city="Surabaya">
-                                        <option value="20111" data-city="Medan">
-                                        <option value="50134" data-city="Semarang">
-                                        <option value="55111" data-city="Yogyakarta">
-                                        <option value="65111" data-city="Malang">
-                                        <option value="15111" data-city="Tangerang">
-                                        <option value="17111" data-city="Bekasi">
-                                        <option value="16411" data-city="Depok">
-                                        <option value="16111" data-city="Bogor">
-                                    </datalist>
+                                    {{-- Datalist kosong, diisi otomatis oleh JavaScript dari JSON --}}
+                                    <datalist id="postal-options"></datalist>
 
                                     <small class="text-muted mt-1 d-block" style="font-size: 11px;">Bisa pilih dari kota atau kode pos.</small>
                                     @error('postal_zip') <small class="text-danger">{{ $message }}</small> @enderror
@@ -233,7 +203,7 @@
 
                             {{-- Kotak & Tombol Simpan Alamat Baru --}}
                             <div class="mt-4 p-4 bg-light border rounded shadow-sm mb-4">
-                                <h5 class="font-weight-bold text-black mb-2" style="font-size: 15px;">💾 Simpan Alamat Ini untuk Checkout Berikutnya</h5>
+                                <h5 class="font-weight-bold text-black mb-2" style="font-size: 15px;">Simpan Alamat Ini untuk Checkout Berikutnya</h5>
                                 <div class="row align-items-end">
                                     <div class="col-md-8 mb-2 mb-md-0">
                                         <label class="small text-muted mb-1">Label Alamat (Cth: Rumah Utama, Toko, Kantor)</label>
@@ -303,12 +273,10 @@
 
                                             @forelse($cartItems ?? [] as $id => $item)
                                                 @php
-                                                    // Murni mengambil berat dari database (fallback ke 0 jika tidak diset)
                                                     $itemWeight = $item['weight'] ?? 0;
                                                     $itemQty = $item['quantity'] ?? 1;
                                                     $initialTotalWeight += ($itemWeight * $itemQty);
                                                 @endphp
-                                                <!-- Baris Produk dengan Atribut Dinamis untuk Berat Database -->
                                                 <tr class="cart-item-row" data-weight="{{ $itemWeight }}" data-qty="{{ $itemQty }}">
                                                     <td class="align-middle">
                                                         <div class="d-flex align-items-center">
@@ -383,6 +351,19 @@
                                         @error('shipping_cost') <small class="text-danger">{{ $message }}</small> @enderror
                                     </div>
 
+                                    <!-- OPSI PROTEKSI / GARANSI RETUR -->
+                                    <div class="card p-3 mb-4 border shadow-sm bg-light">
+                                        <div class="form-check p-0">
+                                            <input class="form-check-input ms-0 me-2" type="checkbox" name="use_protection" value="1" id="use_protection" onchange="updateGrandTotalWithProtection()">
+                                            <label class="form-check-label text-black font-weight-bold" for="use_protection">
+                                                Tambah Proteksi & Garansi Retur (+Rp 5.000)
+                                            </label>
+                                            <p class="text-muted small mt-1 mb-0">
+                                                Centang untuk mengaktifkan garansi pengembalian (refund/retur) jika barang rusak atau tidak sesuai. Jika tidak dicentang, pesanan bersifat final dan tidak bisa direfund.
+                                            </p>
+                                        </div>
+                                    </div>
+
                                     <!-- Direct Bank Transfer -->
                                     <div class="border p-3 mb-3">
                                         <div class="form-check p-0">
@@ -448,49 +429,6 @@
     <script src="{{ asset('js/map.js') }}"></script>
     <script src="{{ asset('js/coupon.js') }}"></script>
     <script src="{{ asset('js/checkout-address.js') }}"></script>
+    <script src="{{ asset('js/checkout-protection.js') }}"></script>
     
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const cityInput = document.getElementById('c_state_country');
-            const postalInput = document.getElementById('c_postal_zip');
-            const cityDatalist = document.getElementById('city-options');
-            const postalDatalist = document.getElementById('postal-options');
-
-            if (cityInput && postalInput && cityDatalist) {
-                cityInput.addEventListener('input', function() {
-                    const val = this.value;
-                    const options = cityDatalist.options;
-                    
-                    for (let i = 0; i < options.length; i++) {
-                        if (options[i].value === val) {
-                            const postal = options[i].getAttribute('data-postal');
-                            if (postal) {
-                                postalInput.value = postal;
-                            }
-                            break;
-                        }
-                    }
-                });
-            }
-
-            if (postalInput && cityInput && postalDatalist) {
-                postalInput.addEventListener('input', function() {
-                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);
-
-                    const val = this.value;
-                    const options = postalDatalist.options;
-
-                    for (let i = 0; i < options.length; i++) {
-                        if (options[i].value === val) {
-                            const city = options[i].getAttribute('data-city');
-                            if (city) {
-                                cityInput.value = city;
-                            }
-                            break;
-                        }
-                    }
-                });
-            }
-        });
-    </script>
 @endsection

@@ -252,7 +252,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function process(Request $request)
+   public function process(Request $request)
     {
         if (auth()->check() && auth()->user()->status === 'suspended') {
             return redirect()->back()->with('error', 'Akun Anda sedang disuspend/ditangguhkan. Anda dapat menjelajahi website ini, tetapi tidak diizinkan untuk melakukan checkout.');
@@ -272,6 +272,7 @@ class CheckoutController extends Controller
             'longitude' => 'nullable|numeric',
             'shipping_cost' => 'required|numeric|min:0',
             'shipping_courier' => 'required|string',
+            'use_protection' => 'nullable|boolean',
         ]);
 
         $rawCart = session()->get('cart', []);
@@ -282,11 +283,18 @@ class CheckoutController extends Controller
         DB::beginTransaction();
         try {
             $subtotal = 0;
+            $totalWeight = 0;
+
             foreach ($rawCart as $id => $item) {
                 $product = Product::find($id);
                 $price = $product->price ?? ($item['price'] ?? 0);
                 $subtotal += $price * $item['quantity'];
+
+                $productWeight = $product->weight ?? 1; 
+                $totalWeight += $productWeight * $item['quantity'];
             }
+
+            $totalWeight = max(1, $totalWeight);
 
             $discount = 0;
             $coupon = session()->get('coupon');
@@ -295,8 +303,13 @@ class CheckoutController extends Controller
             }
             $subtotalAfterDiscount = max(0, $subtotal - $discount);
 
-            $shippingCost = $request->shipping_cost;
-            $totalPrice = $subtotalAfterDiscount + $shippingCost;
+            $baseShippingCost = $request->shipping_cost; 
+            $shippingCost = $baseShippingCost * $totalWeight; 
+            
+            $useProtection = $request->has('use_protection');
+            $protectionFee = $useProtection ? 5000 : 0;
+
+            $totalPrice = $subtotalAfterDiscount + $shippingCost + $protectionFee;
 
             foreach ($rawCart as $id => $item) {
                 $product = Product::lockForUpdate()->find($id);
@@ -336,6 +349,8 @@ class CheckoutController extends Controller
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
                 'status' => 'pending',
+                'is_protected' => $useProtection,
+                'protection_fee' => $protectionFee,
             ]);
 
             foreach ($rawCart as $id => $item) {

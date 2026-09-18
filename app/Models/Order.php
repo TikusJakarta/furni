@@ -29,6 +29,8 @@ class Order extends Model
         'latitude',
         'longitude',
         'status',
+        'is_protected',    
+        'protection_fee',
     ];
 
     public function user()

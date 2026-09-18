@@ -1,0 +1,17 @@
+[
+    {"city": "Jakarta Pusat", "postal": "10110"},
+    {"city": "Jakarta Selatan", "postal": "12110"},
+    {"city": "Jakarta Barat", "postal": "11110"},
+    {"city": "Jakarta Timur", "postal": "13110"},
+    {"city": "Jakarta Utara", "postal": "14110"},
+    {"city": "Bandung", "postal": "40111"},
+    {"city": "Surabaya", "postal": "60119"},
+    {"city": "Medan", "postal": "20111"},
+    {"city": "Semarang", "postal": "50134"},
+    {"city": "Yogyakarta", "postal": "55111"},
+    {"city": "Malang", "postal": "65111"},
+    {"city": "Tangerang", "postal": "15111"},
+    {"city": "Bekasi", "postal": "17111"},
+    {"city": "Depok", "postal": "16411"},
+    {"city": "Bogor", "postal": "16111"}
+]
