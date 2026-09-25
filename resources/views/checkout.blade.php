@@ -62,7 +62,8 @@
                         {{-- Dropdown Pilihan Alamat Tersimpan --}}
                         @if(isset($userAddresses) && $userAddresses->count() > 0)
                             <div class="mb-4 p-4 bg-light border rounded shadow-sm">
-                                <label for="saved_address_select" class="font-weight-bold text-black mb-2">📍 Pilih dari Alamat Tersimpan:</label>
+                                <label for="saved_address_select" class="font-weight-bold text-black mb-2">📍 Pilih dari Alamat
+                                    Tersimpan:</label>
                                 <select id="saved_address_select" class="form-control">
                                     <option value="">-- Ketik manual atau pilih alamat tersimpan --</option>
                                     @foreach($userAddresses as $addr)
@@ -141,36 +142,32 @@
                                 <div class="col-md-6">
                                     <label for="c_state_country" class="text-black">State / City <span
                                             class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="c_state_country" name="state_country" list="city-options"
-                                        required value="{{ old('state_country') }}" placeholder="Ketik nama kota...">
-                                    
+                                    <input type="text" class="form-control" id="c_state_country" name="state_country"
+                                        list="city-options" required value="{{ old('state_country') }}"
+                                        placeholder="Ketik nama kota...">
+
                                     {{-- Datalist kosong, diisi otomatis oleh JavaScript dari JSON --}}
                                     <datalist id="city-options"></datalist>
                                     @error('state_country') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="c_postal_zip" class="text-black fw-bold">Postal / Zip <span class="text-danger">*</span></label>
+                                    <label for="c_postal_zip" class="text-black fw-bold">Postal / Zip <span
+                                            class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light text-muted border-end-0">
                                             <i class="fa fa-map-marker-alt"></i>
                                         </span>
-                                        <input type="text" 
-                                               class="form-control border-start-0 ps-0" 
-                                               id="c_postal_zip" 
-                                               name="postal_zip" 
-                                               list="postal-options"
-                                               placeholder="Pilih/ketik kode pos" 
-                                               maxlength="5" 
-                                               pattern="[0-9]*" 
-                                               inputmode="numeric" 
-                                               required 
-                                               value="{{ old('postal_zip') }}">
+                                        <input type="text" class="form-control border-start-0 ps-0" id="c_postal_zip"
+                                            name="postal_zip" list="postal-options" placeholder="Pilih/ketik kode pos"
+                                            maxlength="5" pattern="[0-9]*" inputmode="numeric" required
+                                            value="{{ old('postal_zip') }}">
                                     </div>
-                                    
+
                                     {{-- Datalist kosong, diisi otomatis oleh JavaScript dari JSON --}}
                                     <datalist id="postal-options"></datalist>
 
-                                    <small class="text-muted mt-1 d-block" style="font-size: 11px;">Bisa pilih dari kota atau kode pos.</small>
+                                    <small class="text-muted mt-1 d-block" style="font-size: 11px;">Bisa pilih dari kota
+                                        atau kode pos.</small>
                                     @error('postal_zip') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
                             </div>
@@ -193,7 +190,8 @@
 
                             <div class="form-group mb-4">
                                 <label class="text-black font-weight-bold mb-2">Pin Location on Map (Optional)</label>
-                                <p class="text-muted small mb-2">Ketik alamat di kolom pencarian peta atau klik langsung pada peta.</p>
+                                <p class="text-muted small mb-2">Ketik alamat di kolom pencarian peta atau klik langsung
+                                    pada peta.</p>
                                 <div id="map" data-subtotal="{{ $total ?? ($subtotal ?? 0) }}"
                                     style="height: 320px; width: 100%; border-radius: 6px;" class="border"></div>
                                 <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude') }}">
@@ -203,14 +201,19 @@
 
                             {{-- Kotak & Tombol Simpan Alamat Baru --}}
                             <div class="mt-4 p-4 bg-light border rounded shadow-sm mb-4">
-                                <h5 class="font-weight-bold text-black mb-2" style="font-size: 15px;">Simpan Alamat Ini untuk Checkout Berikutnya</h5>
+                                <h5 class="font-weight-bold text-black mb-2" style="font-size: 15px;">Simpan Alamat Ini
+                                    untuk Checkout Berikutnya</h5>
                                 <div class="row align-items-end">
                                     <div class="col-md-8 mb-2 mb-md-0">
-                                        <label class="small text-muted mb-1">Label Alamat (Cth: Rumah Utama, Toko, Kantor)</label>
-                                        <input type="text" id="new_address_label" class="form-control form-control-sm" placeholder="Beri nama alamat ini...">
+                                        <label class="small text-muted mb-1">Label Alamat (Cth: Rumah Utama, Toko,
+                                            Kantor)</label>
+                                        <input type="text" id="new_address_label" class="form-control form-control-sm"
+                                            placeholder="Beri nama alamat ini...">
                                     </div>
                                     <div class="col-md-4">
-                                        <button type="button" id="btn-save-address" class="btn btn-primary btn-sm btn-block py-2 text-white font-weight-bold" style="background-color: #2f3b4c; border-color: #2f3b4c;">
+                                        <button type="button" id="btn-save-address"
+                                            class="btn btn-primary btn-sm btn-block py-2 text-white font-weight-bold"
+                                            style="background-color: #2f3b4c; border-color: #2f3b4c;">
                                             Simpan Alamat
                                         </button>
                                     </div>
@@ -277,15 +280,19 @@
                                                     $itemQty = $item['quantity'] ?? 1;
                                                     $initialTotalWeight += ($itemWeight * $itemQty);
                                                 @endphp
-                                                <tr class="cart-item-row" data-weight="{{ $itemWeight }}" data-qty="{{ $itemQty }}">
+                                                <tr class="cart-item-row" data-weight="{{ $itemWeight }}"
+                                                    data-qty="{{ $itemQty }}">
                                                     <td class="align-middle">
                                                         <div class="d-flex align-items-center">
                                                             @if(!empty($item['image']))
-                                                                <img src="{{ asset($item['image']) }}" alt="{{ $item['name'] }}" style="width: 45px; height: 45px; object-fit: cover;" class="rounded me-2 border flex-shrink-0">
+                                                                <img src="{{ asset($item['image']) }}" alt="{{ $item['name'] }}"
+                                                                    style="width: 45px; height: 45px; object-fit: cover;"
+                                                                    class="rounded me-2 border flex-shrink-0">
                                                             @endif
                                                             <div style="line-height: 1.3;">
-                                                                <span class="text-black d-block">{{ $item['name'] }}</span> 
-                                                                <strong class="text-muted" style="font-size: 13px;">x {{ $itemQty }}</strong>
+                                                                <span class="text-black d-block">{{ $item['name'] }}</span>
+                                                                <strong class="text-muted" style="font-size: 13px;">x
+                                                                    {{ $itemQty }}</strong>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -331,7 +338,8 @@
                                             </tr>
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Order Total</strong></td>
-                                                <td class="text-black font-weight-bold text-end"><strong id="order-total-text">Rp
+                                                <td class="text-black font-weight-bold text-end"><strong
+                                                        id="order-total-text">Rp
                                                         {{ number_format($total ?? 0, 0, ',', '.') }}</strong></td>
                                             </tr>
                                         </tbody>
@@ -354,12 +362,16 @@
                                     <!-- OPSI PROTEKSI / GARANSI RETUR -->
                                     <div class="card p-3 mb-4 border shadow-sm bg-light">
                                         <div class="form-check p-0">
-                                            <input class="form-check-input ms-0 me-2" type="checkbox" name="use_protection" value="1" id="use_protection" onchange="updateGrandTotalWithProtection()">
-                                            <label class="form-check-label text-black font-weight-bold" for="use_protection">
-                                                Tambah Proteksi & Garansi Retur (+Rp 5.000)
+                                            <input class="form-check-input ms-0 me-2" type="checkbox" name="use_protection"
+                                                value="1" id="use_protection">
+                                            <label class="form-check-label text-black font-weight-bold"
+                                                for="use_protection">
+                                                Tambah Proteksi & Garansi Retur (<span id="protection-fee-label"
+                                                    class="text-primary">Rp 0</span>)
                                             </label>
                                             <p class="text-muted small mt-1 mb-0">
-                                                Centang untuk mengaktifkan garansi pengembalian (refund/retur) jika barang rusak atau tidak sesuai. Jika tidak dicentang, pesanan bersifat final dan tidak bisa direfund.
+                                                Proteksi kerusakan & kehilangan selama pengiriman (0.5% dari total nilai
+                                                produk).
                                             </p>
                                         </div>
                                     </div>
@@ -430,5 +442,5 @@
     <script src="{{ asset('js/coupon.js') }}"></script>
     <script src="{{ asset('js/checkout-address.js') }}"></script>
     <script src="{{ asset('js/checkout-protection.js') }}"></script>
-    
+
 @endsection

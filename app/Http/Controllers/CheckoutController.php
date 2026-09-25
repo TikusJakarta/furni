@@ -307,7 +307,12 @@ class CheckoutController extends Controller
             $shippingCost = $baseShippingCost * $totalWeight; 
             
             $useProtection = $request->has('use_protection');
-            $protectionFee = $useProtection ? 5000 : 0;
+            $protectionFee = 0;
+
+            if ($useProtection) {
+                $calculatedFee = round($subtotal * 0.005);
+                $protectionFee = max(2000, $calculatedFee);
+            }
 
             $totalPrice = $subtotalAfterDiscount + $shippingCost + $protectionFee;
 
@@ -411,5 +416,14 @@ class CheckoutController extends Controller
             ->latest()->get();
 
         return view('user.dashboard', compact('orders', 'pendingOrders', 'processingOrders', 'completedOrders'));
+    }
+
+    public function getCities()
+    {
+        $cities = DB::table('cities')
+                    ->select('city', 'postal_code')
+                    ->get();
+
+        return response()->json($cities);
     }
 }

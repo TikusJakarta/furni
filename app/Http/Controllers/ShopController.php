@@ -13,7 +13,7 @@ class ShopController extends Controller
     $settings = Setting::pluck('value', 'key')->all();
     $search = $request->input('search');
 
-    $products = Product::when($search, function ($query, $search) {
+        $products = Product::when($search, function ($query, $search) {
         return $query->where('name', 'like', '%' . $search . '%')
                      ->orWhere('description', 'like', '%' . $search . '%');
     })->latest()->get();

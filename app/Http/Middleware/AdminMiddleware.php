@@ -14,6 +14,6 @@ class AdminMiddleware
             return $next($request);
         }
 
-        return redirect()->route('home')->with('error', 'Akses ditolak! Anda bukan admin.');
+            return redirect()->route('home')->with('error', 'Akses ditolak! Anda bukan admin.');
     }
 }

@@ -49,6 +49,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
     Route::get('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
+    Route::get('/api/get-cities', [CheckoutController::class, 'getCities']);
+
     // Rute Checkout & Thankyou
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
