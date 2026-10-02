@@ -442,5 +442,6 @@
     <script src="{{ asset('js/coupon.js') }}"></script>
     <script src="{{ asset('js/checkout-address.js') }}"></script>
     <script src="{{ asset('js/checkout-protection.js') }}"></script>
+    <script src="{{ asset('js/shipping_courier_select.js') }}"></script>
 
 @endsection

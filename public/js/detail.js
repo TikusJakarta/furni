@@ -112,3 +112,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+document.querySelectorAll('.product-modal-trigger').forEach(item => {
+    item.addEventListener('click', function (e) {
+        e.preventDefault();
+        
+        let variants = JSON.parse(this.getAttribute('data-variants') || '[]');
+        let variantContainer = document.getElementById('modal-variants-container');
+        let variantSelect = document.getElementById('modal-variant-select');
+        
+        variantSelect.innerHTML = '';
+        
+        if (variants.length > 0) {
+            variantContainer.classList.remove('d-none');
+            variants.forEach(v => {
+                let option = document.createElement('option');
+                option.value = v.id;
+                option.textContent = `${v.name} (Stok: ${v.stock}) ${v.price ? ' - Rp ' + Number(v.price).toLocaleString('id-ID') : ''}`;
+                variantSelect.appendChild(option);
+            });
+        } else {
+            variantContainer.classList.add('d-none');
+        }
+        
+        $('#productModal').modal('show');
+    });
+});

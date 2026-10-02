@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Order;
 use App\Models\Coupon;
 use App\Models\UserAddress;
@@ -25,19 +26,20 @@ class CheckoutController extends Controller
         $cartItems = [];
         $subtotal = 0;
 
-        foreach ($rawCart as $id => $item) {
-            // Ambil data produk asli dari database untuk memastikan berat & harga murni dari database
-            $product = Product::find($id);
+        foreach ($rawCart as $cartKey => $item) {
+            $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
+            $product = Product::find($productId);
 
-            $cartItems[$id] = [
-                'name' => $product->name ?? ($item['name'] ?? 'Produk'),
-                'price' => $product->price ?? ($item['price'] ?? 0),
+            // Ambil harga dan nama dari session cart (yang sudah membawa varian) atau fallback ke database
+            $cartItems[$cartKey] = [
+                'name' => $item['name'] ?? ($product->name ?? 'Produk'),
+                'price' => $item['price'] ?? ($product->price ?? 0),
                 'quantity' => $item['quantity'] ?? 1,
-                'weight' => $product->weight ?? ($item['weight'] ?? 0), // Berat murni dari database (gram)
+                'weight' => $product->weight ?? ($item['weight'] ?? 0),
                 'image' => $product->image ?? ($item['image'] ?? ''),
             ];
 
-            $subtotal += $cartItems[$id]['price'] * $cartItems[$id]['quantity'];
+            $subtotal += $cartItems[$cartKey]['price'] * $cartItems[$cartKey]['quantity'];
         }
 
         // Perhitungan Diskon Kupon
@@ -50,17 +52,15 @@ class CheckoutController extends Controller
                 $discount = $coupon['value'];
             }
         }
-        
+
         $discount = min($discount, $subtotal);
         $total = $subtotal - $discount;
 
-        // Ambil alamat tersimpan milik user yang sedang login
         $userAddresses = auth()->check() ? auth()->user()->addresses()->latest()->get() : collect();
 
         return view('checkout', compact('settings', 'cartItems', 'subtotal', 'discount', 'total', 'coupon', 'userAddresses'));
     }
 
-    // Simpan Alamat Baru dari Checkout
     public function storeAddress(Request $request)
     {
         $request->validate([
@@ -89,7 +89,6 @@ class CheckoutController extends Controller
         return response()->json(['success' => true, 'message' => 'Alamat baru berhasil disimpan!']);
     }
 
-    // Terapkan Kupon Promo
     public function applyCoupon(Request $request)
     {
         $request->validate(['coupon_code' => 'required|string']);
@@ -112,9 +111,10 @@ class CheckoutController extends Controller
 
         $cartItems = session()->get('cart', []);
         $subtotal = 0;
-        foreach ($cartItems as $id => $item) {
-            $product = Product::find($id);
-            $price = $product->price ?? ($item['price'] ?? 0);
+        foreach ($cartItems as $cartKey => $item) {
+            $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
+            $product = Product::find($productId);
+            $price = $item['price'] ?? ($product->price ?? 0);
             $subtotal += $price * $item['quantity'];
         }
 
@@ -138,7 +138,6 @@ class CheckoutController extends Controller
         return redirect()->back()->with('success', 'Kupon diskon berhasil digunakan!');
     }
 
-    // Hapus Kupon Promo
     public function removeCoupon(Request $request)
     {
         session()->forget('coupon');
@@ -151,9 +150,9 @@ class CheckoutController extends Controller
     public function checkRates(Request $request)
     {
         $request->validate([
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'city' => 'nullable|string', 
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'city' => 'nullable|string',
         ]);
 
         $rawCart = session()->get('cart', []);
@@ -162,100 +161,82 @@ class CheckoutController extends Controller
         }
 
         $totalWeight = 0;
-        $totalValue = 0;
-        
-        foreach ($rawCart as $id => $item) {
-            $product = Product::find($id);
-            // Ambil berat murni dari database produk
-            $weight = $product->weight ?? ($item['weight'] ?? 0); 
-            $price = $product->price ?? ($item['price'] ?? 0);
+        $itemsPayload = [];
+
+        foreach ($rawCart as $cartKey => $item) {
+            $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
+            $product = Product::find($productId);
+            $weight = $product->weight ?? ($item['weight'] ?? 1000);
+            $price = $item['price'] ?? ($product->price ?? 0);
             $qty = $item['quantity'] ?? 1;
 
             $totalWeight += $weight * $qty;
-            $totalValue += $price * $qty;
+
+            $itemsPayload[] = [
+                'name' => $item['name'] ?? ($product->name ?? 'Produk'),
+                'description' => 'Produk Furniture',
+                'value' => (int) $price,
+                'weight' => (int) $weight,
+                'quantity' => (int) $qty,
+            ];
         }
 
-        // --- FILTER KURIR PINTAR (BITESHIP + FALLBACK KOORDINAT) ---
-        $city = strtolower($request->input('city', ''));
-        $jabodetabekKeywords = ['jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'];
-        $isJabodetabek = false;
-
-        foreach ($jabodetabekKeywords as $keyword) {
-            if (str_contains($city, $keyword)) {
-                $isJabodetabek = true;
-                break;
-            }
-        }
-
-        if (!$isJabodetabek && $request->latitude && $request->longitude) {
-            $lat = (float) $request->latitude;
-            $lng = (float) $request->longitude;
-            
-            if ($lat >= -6.65 && $lat <= -6.10 && $lng >= 106.50 && $lng <= 107.10) {
-                $isJabodetabek = true;
-            }
-        }
-
-        $couriers = $isJabodetabek 
-            ? 'jne,sicepat,jnt,gojek,grab' 
-            : 'jne,sicepat,jnt';
+        $lat = $request->latitude ? (float) $request->latitude : -6.175392;
+        $lng = $request->longitude ? (float) $request->longitude : 106.827153;
 
         $response = Http::withToken(env('BITESHIP_API_KEY'))
             ->post('https://api.biteship.com/v1/rates/couriers', [
                 'origin_latitude' => -6.175392,
                 'origin_longitude' => 106.827153,
-                'destination_latitude' => (float) $request->latitude,
-                'destination_longitude' => (float) $request->longitude,
-                'couriers' => $couriers,
-                'items' => [
-                    [
-                        'name' => 'Belanjaan Furni',
-                        'description' => 'Produk Toko Furni',
-                        'value' => (int) $totalValue,
-                        'weight' => (int) max($totalWeight, 1), // Biteship minimal 1 gram
-                        'quantity' => 1,
-                    ]
-                ]
+                'destination_latitude' => $lat,
+                'destination_longitude' => $lng,
+                'couriers' => 'jne,sicepat,jnt,gojek,grab',
+                'items' => $itemsPayload
             ]);
 
         if (!$response->successful()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil tarif dari Biteship. Periksa kembali API Key Anda.'
-            ], 400);
+            return response()->json(['success' => false, 'message' => 'Gagal mengambil tarif dari Biteship.'], 400);
         }
 
         $biteshipData = $response->json();
         $pricing = [];
 
+        $totalWeightKg = max(1, ceil($totalWeight / 1000));
+
         if (isset($biteshipData['pricing'])) {
             foreach ($biteshipData['pricing'] as $rate) {
                 $serviceName = $rate['courier_service_name'] ?? $rate['service_name'];
                 $serviceLower = strtolower($serviceName);
-                
-                $type = (str_contains($serviceLower, 'instant') || str_contains($serviceLower, 'sameday')) ? 'instant' : 'reguler';
+                $isInstant = str_contains($serviceLower, 'instant') || str_contains($serviceLower, 'sameday');
+                $basePrice = (int) $rate['price'];
+
+                $finalPrice = $isInstant ? $basePrice : ($basePrice * $totalWeightKg);
+
+                $insuranceCost = 0;
+                if (isset($rate['insurance'])) {
+                    $insuranceCost = is_array($rate['insurance']) ? ($rate['insurance']['fee'] ?? 0) : (int) $rate['insurance'];
+                } elseif (isset($rate['insurance_fee'])) {
+                    $insuranceCost = (int) $rate['insurance_fee'];
+                }
 
                 $pricing[] = [
                     'courier_name' => strtoupper($rate['courier_code']),
                     'courier_service_name' => $serviceName,
-                    'price' => (int) $rate['price'],
+                    'price' => $finalPrice,
+                    'insurance_cost' => $insuranceCost,
                     'shipment_duration' => $rate['duration'] ?? '1-3 hari',
-                    'type' => $type
+                    'type' => $rate['type'] ?? ($isInstant ? 'instant' : 'reguler'),
                 ];
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'pricing' => $pricing,
-            'is_jabodetabek' => $isJabodetabek
-        ]);
+        return response()->json(['success' => true, 'pricing' => $pricing]);
     }
 
-   public function process(Request $request)
+    public function process(Request $request)
     {
         if (auth()->check() && auth()->user()->status === 'suspended') {
-            return redirect()->back()->with('error', 'Akun Anda sedang disuspend/ditangguhkan. Anda dapat menjelajahi website ini, tetapi tidak diizinkan untuk melakukan checkout.');
+            return redirect()->back()->with('error', 'Akun Anda sedang disuspend.');
         }
 
         $request->validate([
@@ -283,18 +264,40 @@ class CheckoutController extends Controller
         DB::beginTransaction();
         try {
             $subtotal = 0;
-            $totalWeight = 0;
 
-            foreach ($rawCart as $id => $item) {
-                $product = Product::find($id);
-                $price = $product->price ?? ($item['price'] ?? 0);
-                $subtotal += $price * $item['quantity'];
+            // 1. Validasi Stok Utama & Varian Terlebih Dahulu
+            foreach ($rawCart as $cartKey => $item) {
+                $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
+                $variantId = $item['product_variant_id'] ?? null;
+                $product = Product::lockForUpdate()->find($productId);
 
-                $productWeight = $product->weight ?? 1; 
-                $totalWeight += $productWeight * $item['quantity'];
+                if (!$product) {
+                    throw new \Exception("Produk '{$item['name']}' sudah tidak tersedia.");
+                }
+
+                if ($variantId) {
+                    $variant = ProductVariant::lockForUpdate()->find($variantId);
+                    if (!$variant) {
+                        throw new \Exception("Varian produk untuk '{$item['name']}' sudah tidak tersedia.");
+                    }
+
+                    if ($variant->stock < $item['quantity']) {
+                        throw new \Exception("Stok varian '{$variant->name}' untuk produk '{$product->name}' tidak mencukupi.");
+                    }
+                } else {
+                    $reservedStock = \App\Models\LimitStock::where('product_id', $product->id)
+                        ->where('expires_at', '>', now())
+                        ->sum('quantity');
+
+                    $effectiveStock = $product->stock - $reservedStock;
+
+                    if ($effectiveStock < $item['quantity']) {
+                        throw new \Exception("Stok produk '{$product->name}' baru saja habis atau tidak mencukupi.");
+                    }
+                }
+
+                $subtotal += $item['price'] * $item['quantity'];
             }
-
-            $totalWeight = max(1, $totalWeight);
 
             $discount = 0;
             $coupon = session()->get('coupon');
@@ -303,36 +306,10 @@ class CheckoutController extends Controller
             }
             $subtotalAfterDiscount = max(0, $subtotal - $discount);
 
-            $baseShippingCost = $request->shipping_cost; 
-            $shippingCost = $baseShippingCost * $totalWeight; 
-            
+            $shippingCost = (float) $request->shipping_cost;
             $useProtection = $request->has('use_protection');
-            $protectionFee = 0;
-
-            if ($useProtection) {
-                $calculatedFee = round($subtotal * 0.005);
-                $protectionFee = max(2000, $calculatedFee);
-            }
-
-            $totalPrice = $subtotalAfterDiscount + $shippingCost + $protectionFee;
-
-            foreach ($rawCart as $id => $item) {
-                $product = Product::lockForUpdate()->find($id);
-
-                if (!$product) {
-                    throw new \Exception("Produk '{$item['name']}' sudah tidak tersedia.");
-                }
-
-                $reservedStock = \App\Models\LimitStock::where('product_id', $product->id)
-                    ->where('expires_at', '>', now())
-                    ->sum('quantity');
-
-                $effectiveStock = $product->stock - $reservedStock;
-
-                if ($effectiveStock < $item['quantity']) {
-                    throw new \Exception("Stok produk '{$product->name}' baru saja habis atau tidak mencukupi.");
-                }
-            }
+            $protectionFee = $useProtection ? ($subtotal * 0.005) : 0;
+            $totalPrice = $subtotalAfterDiscount + $shippingCost;
 
             $order = Order::create([
                 'user_id' => auth()->id(),
@@ -358,20 +335,22 @@ class CheckoutController extends Controller
                 'protection_fee' => $protectionFee,
             ]);
 
-            foreach ($rawCart as $id => $item) {
-                $product = Product::find($id);
-                $price = $product->price ?? ($item['price'] ?? 0);
+            // 2. Simpan Order Items dan Catat / Batasi Stok
+            foreach ($rawCart as $cartKey => $item) {
+                $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
+                $variantId = $item['product_variant_id'] ?? null;
 
                 \App\Models\OrderItem::create([
                     'order_id' => $order->id,
-                    'product_id' => $id,
+                    'product_id' => $productId,
+                    'product_variant_id' => $variantId, // Pastikan kolom ini ada di tabel order_items atau sesuaikan nama kolomnya
                     'quantity' => $item['quantity'],
-                    'price' => $price,
+                    'price' => $item['price'],
                 ]);
 
                 \App\Models\LimitStock::create([
                     'user_id' => auth()->id(),
-                    'product_id' => $id,
+                    'product_id' => $productId,
                     'quantity' => $item['quantity'],
                     'order_id' => $order->id,
                     'expires_at' => now()->addMinutes(30),
@@ -398,19 +377,19 @@ class CheckoutController extends Controller
     {
         $userId = auth()->id();
 
-        $orders = Order::with('orderItems.product')->where('user_id', $userId)->latest()->get();
-        
-        $pendingOrders = Order::with('orderItems.product')
+        $orders = Order::with(['orderItems.product', 'orderItems.productVariant'])->where('user_id', $userId)->latest()->get();
+
+        $pendingOrders = Order::with(['orderItems.product', 'orderItems.productVariant'])
             ->where('user_id', $userId)
             ->where('status', 'pending')
             ->latest()->get();
-        
-        $processingOrders = Order::with('orderItems.product')
+
+        $processingOrders = Order::with(['orderItems.product', 'orderItems.productVariant'])
             ->where('user_id', $userId)
             ->whereIn('status', ['verifikasi', 'paid', 'packing', 'shipping', 'shipped'])
             ->latest()->get();
-            
-        $completedOrders = Order::with('orderItems.product')
+
+        $completedOrders = Order::with(['orderItems.product', 'orderItems.productVariant'])
             ->where('user_id', $userId)
             ->whereIn('status', ['completed', 'cancelled'])
             ->latest()->get();
@@ -421,8 +400,8 @@ class CheckoutController extends Controller
     public function getCities()
     {
         $cities = DB::table('cities')
-                    ->select('city', 'postal_code')
-                    ->get();
+            ->select('city', 'postal_code')
+            ->get();
 
         return response()->json($cities);
     }

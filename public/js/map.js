@@ -11,12 +11,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const latInput = document.getElementById('latitude');
     const lngInput = document.getElementById('longitude');
     
-    // Selector elemen form
     const cityInput = document.querySelector('input[name="state_country"]') || document.getElementById('c_state_country') || document.getElementById('city');
     const addressInput = document.querySelector('input[name="address"]') || document.querySelector('textarea[name="address"]') || document.getElementById('c_address');
     const postalInput = document.querySelector('input[name="postal_zip"]') || document.getElementById('c_postal_zip');
     const nameInput = document.querySelector('input[name="first_name"]') || document.getElementById('c_fname');
     const phoneInput = document.querySelector('input[name="phone"]') || document.getElementById('c_phone');
+    
+    // Selector Checkbox Proteksi
+    const protectionCheckbox = document.getElementById('use_protection');
 
     let initialLat = latInput && latInput.value ? parseFloat(latInput.value) : defaultLat;
     let initialLng = lngInput && lngInput.value ? parseFloat(lngInput.value) : defaultLng;
@@ -42,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetchShippingRates(lat, lng, cityName);
     }
 
-    // 2. Integrasi Kotak Search / Geosearch (OpenStreetMap Provider)
+    // 2. Integrasi Kotak Search / Geosearch
     if (window.GeoSearch) {
         const provider = new window.GeoSearch.OpenStreetMapProvider();
         const searchControl = new window.GeoSearch.GeoSearchControl({
@@ -80,8 +82,22 @@ document.addEventListener('DOMContentLoaded', function () {
         updatePosition(e.latlng.lat, e.latlng.lng);
     });
 
+    // 3. Event ketika mengetik/memilih Kota
     if (cityInput) {
         cityInput.addEventListener('input', function () {
+            const val = cityInput.value;
+            
+            const match = val.match(/^(.*?)\s*\((.*?)\)$/);
+            if (match) {
+                const cityName = match[1].trim();
+                const postalCode = match[2].trim();
+                
+                cityInput.value = cityName;
+                if (postalInput) {
+                    postalInput.value = postalCode;
+                }
+            }
+
             const lat = latInput && latInput.value ? parseFloat(latInput.value) : initialLat;
             const lng = lngInput && lngInput.value ? parseFloat(lngInput.value) : initialLng;
             fetchShippingRates(lat, lng, cityInput.value);
@@ -112,16 +128,69 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // 4. AMBIL DATA KOTA & KODE POS
+    fetch('/api/get-cities')
+        .then(response => response.json())
+        .then(data => {
+            const cityDatalist = document.getElementById('city-options');
+            const postalDatalist = document.getElementById('postal-options');
+            
+            if (data && Array.isArray(data)) {
+                data.forEach(item => {
+                    if (cityDatalist && item.city && item.postal_code) {
+                        let option = document.createElement('option');
+                        option.value = `${item.city} (${item.postal_code})`;
+                        cityDatalist.appendChild(option);
+                    }
+                    if (postalDatalist && item.postal_code) {
+                        let option = document.createElement('option');
+                        option.value = item.postal_code;
+                        postalDatalist.appendChild(option);
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('Gagal memuat rekomendasi kota/pos:', error));
+
+    if (protectionCheckbox) {
+        protectionCheckbox.addEventListener('change', function() {
+            const lat = latInput && latInput.value ? parseFloat(latInput.value) : initialLat;
+            const lng = lngInput && lngInput.value ? parseFloat(lngInput.value) : initialLng;
+            fetchShippingRates(lat, lng, cityInput ? cityInput.value : '');
+        });
+    }
+
     calculateCartWeight();
+    updateProtectionLabelDisplay();
     fetchShippingRates(initialLat, initialLng, cityInput ? cityInput.value : '');
 });
 
-// Fungsi untuk mengambil data ongkir via AJAX ke Backend (Include Total Weight Murni Database)
+// Fungsi untuk mengira dan memaparkan nominal proteksi secara langsung pada label
+function updateProtectionLabelDisplay() {
+    let totalProductValue = 0;
+    
+    const subtotalEl = document.getElementById('subtotal-text');
+    if (subtotalEl) {
+        totalProductValue = parseFloat(subtotalEl.dataset.subtotal) || 0;
+    }
+
+    const protectionFee = totalProductValue * 0.005;
+
+    const feeLabelEl = document.getElementById('protection-fee-label');
+    if (feeLabelEl) {
+        feeLabelEl.innerText = `Rp ${numberFormat(protectionFee)}`;
+    }
+}
+
+// Fungsi untuk mengambil data ongkir via AJAX ke Backend
+// Fungsi untuk mengambil data ongkir via AJAX ke Backend
 function fetchShippingRates(lat, lng, cityName = '') {
     const courierSelect = document.getElementById('shipping_courier_select');
     if (!courierSelect) return;
 
     const totalWeight = calculateCartWeight();
+    const protectionCheckbox = document.getElementById('use_protection');
+    const useProtection = protectionCheckbox ? protectionCheckbox.checked : false;
 
     courierSelect.innerHTML = '<option value="">Mencari pilihan kurir...</option>';
 
@@ -135,7 +204,8 @@ function fetchShippingRates(lat, lng, cityName = '') {
             latitude: lat, 
             longitude: lng, 
             city: cityName,
-            weight: totalWeight 
+            weight: totalWeight,
+            use_protection: useProtection
         })
     })
     .then(response => response.json())
@@ -144,23 +214,39 @@ function fetchShippingRates(lat, lng, cityName = '') {
         
         if (data.success && data.pricing && data.pricing.length > 0) {
             let instantGroup = document.createElement('optgroup');
-            instantGroup.label = '🚀 Layanan Instant / Same Day';
+            instantGroup.label = '🚀 Layanan Instant';
+
+            let samedayGroup = document.createElement('optgroup');
+            samedayGroup.label = '🕒 Layanan Same Day';
 
             let regulerGroup = document.createElement('optgroup');
             regulerGroup.label = '📦 Layanan Reguler & Ekonomi';
 
             let hasInstant = false;
+            let hasSameday = false;
             let hasReguler = false;
 
             data.pricing.forEach(rate => {
                 let option = document.createElement('option');
                 option.value = `${rate.courier_name} - ${rate.courier_service_name}`;
+                
                 option.dataset.cost = rate.price;
-                option.text = `${rate.courier_name} - ${rate.courier_service_name} - Rp ${numberFormat(rate.price)} (${rate.shipment_duration})`;
+                let insuranceCost = rate.insurance_cost || 0;
+                option.dataset.insurance = insuranceCost; 
 
-                if (rate.type === 'instant') {
+                let totalCostWithInsurance = rate.price + (useProtection ? insuranceCost : 0);
+
+                option.text = `${rate.courier_name} - ${rate.courier_service_name} - Rp ${numberFormat(totalCostWithInsurance)} (${rate.shipment_duration})`;
+
+                const type = (rate.type || '').toLowerCase();
+                const serviceName = (rate.courier_service_name || '').toLowerCase();
+
+                if (type === 'instant' || (serviceName.includes('instant') && !serviceName.includes('same'))) {
                     instantGroup.appendChild(option);
                     hasInstant = true;
+                } else if (type === 'sameday' || type === 'same_day' || serviceName.includes('same day') || serviceName.includes('sameday')) {
+                    samedayGroup.appendChild(option);
+                    hasSameday = true;
                 } else {
                     regulerGroup.appendChild(option);
                     hasReguler = true;
@@ -168,7 +254,12 @@ function fetchShippingRates(lat, lng, cityName = '') {
             });
 
             if (hasInstant) courierSelect.appendChild(instantGroup);
+            if (hasSameday) courierSelect.appendChild(samedayGroup);
             if (hasReguler) courierSelect.appendChild(regulerGroup);
+
+            if (courierSelect.value) {
+                courierSelect.dispatchEvent(new Event('change'));
+            }
 
         } else {
             courierSelect.innerHTML = '<option value="">Tidak ada kurir tersedia untuk lokasi ini</option>';
@@ -180,15 +271,15 @@ function fetchShippingRates(lat, lng, cityName = '') {
     });
 }
 
-// Fungsi Helper untuk Menghitung & Memperbarui Tampilan Total Berat Murni dari Database
+// Fungsi Helper untuk Menghitung Jumlah Berat
 function calculateCartWeight() {
     let totalWeight = 0;
     const cartItems = document.querySelectorAll('.cart-item-row'); 
 
     if (cartItems.length > 0) {
         cartItems.forEach(row => {
-            const weight = parseFloat(row.dataset.weight) || 0; // Berat satuan dari database
-            const qty = parseFloat(row.dataset.qty) || 1;       // Quantity produk
+            const weight = parseFloat(row.dataset.weight) || 0; 
+            const qty = parseFloat(row.dataset.qty) || 1;       
             totalWeight += (weight * qty);
         });
     } else {
@@ -226,7 +317,7 @@ document.addEventListener('click', function (e) {
         const longitude = document.getElementById('longitude')?.value || '';
 
         if (!label) {
-            alert('Silakan isi label alamat terlebih dahulu (Cth: Rumah / Toko).');
+            alert('Silakan isi label alamat terlebih dahulu.');
             if (labelInput) labelInput.focus();
             return;
         }
@@ -272,32 +363,3 @@ document.addEventListener('click', function (e) {
 function numberFormat(number) {
     return new Intl.NumberFormat('id-ID').format(number);
 }
-
-document.addEventListener('change', function(e) {
-    if (e.target && e.target.id === 'shipping_courier_select') {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        const cost = selectedOption.dataset.cost ? parseFloat(selectedOption.dataset.cost) : 0;
-
-        const shippingCostInput = document.getElementById('shipping_cost_input');
-        const shippingCostText = document.getElementById('shipping-cost-text');
-        const orderTotalText = document.getElementById('order-total-text');
-        
-        if (shippingCostInput) shippingCostInput.value = cost;
-        if (shippingCostText) shippingCostText.innerText = 'Rp ' + numberFormat(cost);
-
-        let subtotal = 0;
-        const subtotalEl = document.getElementById('subtotal-amount') || document.querySelector('.cart-subtotal') || document.getElementById('subtotal-text'); 
-        if (subtotalEl) {
-            subtotal = parseFloat(subtotalEl.dataset.subtotal || subtotalEl.innerText.replace(/[^0-9]/g, '')) || 0;
-        }
-        
-        let discount = 0;
-        const discountEl = document.getElementById('discount-amount');
-        if (discountEl) {
-            discount = parseFloat(discountEl.dataset.discount || discountEl.innerText.replace(/[^0-9]/g, '')) || 0;
-        }
-
-        let total = (subtotal - discount) + cost;
-        if (orderTotalText) orderTotalText.innerText = 'Rp ' + numberFormat(total);
-    }
-});

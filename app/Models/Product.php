@@ -19,7 +19,10 @@ class Product extends Model
         return max(0, $this->stock - $reservedStock);
     }
 
-
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
     // Relasi ke model Review
     public function reviews()
     {

@@ -28,20 +28,27 @@
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
-            <!-- Form Pencarian Produk -->
             <div class="row mb-5">
                 <div class="col-md-6 mx-auto">
                     <form action="{{ route('shop') }}" method="GET">
-                        <div class="input-group shadow-sm">
-                            <input type="text" name="search" class="form-control form-control-lg"
-                                placeholder="Cari nama produk furniture..." value="{{ request('search') }}">
-                            <button class="btn btn-primary text-white px-4" type="submit">
-                                <i class="fa fa-search me-1"></i> Cari
-                            </button>
-                            @if(request('search'))
-                                <a href="{{ route('shop') }}"
-                                    class="btn btn-outline-secondary d-flex align-items-center">Reset</a>
-                            @endif
+                        <div class="position-relative">
+                            <div class="input-group shadow-sm">
+                                <input type="text" id="search-input" name="search" class="form-control form-control-lg"
+                                    placeholder="Cari nama produk furniture..." value="{{ request('search') }}"
+                                    autocomplete="off">
+                                <button class="btn btn-primary text-white px-4" type="submit">
+                                    <i class="fa fa-search me-1"></i> Cari
+                                </button>
+                                @if(request('search'))
+                                    <a href="{{ route('shop') }}"
+                                        class="btn btn-outline-secondary d-flex align-items-center">Reset</a>
+                                @endif
+                            </div>
+
+                            <div id="search-suggestions-box"
+                                class="position-absolute start-0 end-0 bg-white border rounded-bottom shadow-lg d-none"
+                                style="top: 100%; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -52,7 +59,7 @@
                     <div class="col-12 col-md-4 col-lg-3 mb-5">
                         <div class="product-item {{ $product->effective_stock <= 0 ? 'opacity-75' : '' }}">
 
-                            <!-- Card / Trigger Modal -->
+                            <!-- Card / Trigger Modal dengan data-variants -->
                             <a href="#" class="product-modal-trigger" data-id="{{ $product->id }}"
                                 data-name="{{ $product->name }}"
                                 data-price="Rp {{ number_format($product->price, 0, ',', '.') }}"
@@ -61,6 +68,7 @@
                                 data-stock="{{ $product->effective_stock }}" data-image="{{ asset($product->image) }}"
                                 data-rating="{{ number_format($product->averageRating(), 1) }}"
                                 data-reviews-count="{{ $product->reviews->count() }}"
+                                data-variants='@json($product->variants)'
                                 data-cart-url="{{ route('cart.add', $product->id) }}">
 
                                 <img src="{{ asset($product->image) }}" class="img-fluid product-thumbnail"
@@ -122,27 +130,38 @@
                             <h4 id="modal-price" class="text-primary font-weight-bold mb-3" style="font-size: 1.5rem;"></h4>
                             <p id="modal-desc" class="text-muted mb-4 small"></p>
 
-                            <ul class="list-unstyled mb-4">
+                            <ul class="list-unstyled mb-3">
                                 <li class="mb-2"><strong>Berat:</strong> <span id="modal-weight"></span></li>
                                 <li class="mb-2"><strong>Stok Tersedia:</strong> <span id="modal-stock-badge"></span></li>
                             </ul>
 
-                            <form id="modal-form" action="" method="GET" class="d-flex align-items-center flex-wrap">
+                            <form id="modal-form" action="" method="GET" class="d-flex flex-column align-items-stretch">
                                 @csrf
-                                <div class="input-group me-3 mb-3 mb-md-0 modal-qty-group">
-                                    <button class="btn btn-outline-secondary decrease px-3 modal-qty-btn"
-                                        type="button">-</button>
-                                    <input type="text" name="quantity"
-                                        class="form-control text-center quantity-amount modal-qty-input" value="1" min="1"
-                                        id="modal-stock-input">
-                                    <button class="btn btn-outline-secondary increase px-3 modal-qty-btn"
-                                        type="button">+</button>
+
+                                <!-- Pilihan Varian Produk (Sudah di dalam form) -->
+                                <div id="modal-variants-container" class="mb-3 d-none">
+                                    <label class="form-label font-weight-bold text-dark d-block mb-1">Pilih Varian:</label>
+                                    <select id="modal-variant-select" name="product_variant_id" class="form-control">
+                                        <option value="">-- Pilih Varian --</option>
+                                    </select>
                                 </div>
 
-                                <button type="submit" id="modal-submit-btn"
-                                    class="btn btn-black text-white px-4 ms-2 modal-submit-btn">
-                                    Add to Cart
-                                </button>
+                                <div class="d-flex align-items-center flex-wrap">
+                                    <div class="input-group me-3 mb-3 mb-md-0 modal-qty-group" style="width: 130px;">
+                                        <button class="btn btn-outline-secondary decrease px-3 modal-qty-btn"
+                                            type="button">-</button>
+                                        <input type="text" name="quantity"
+                                            class="form-control text-center quantity-amount modal-qty-input" value="1" min="1"
+                                            id="modal-stock-input">
+                                        <button class="btn btn-outline-secondary increase px-3 modal-qty-btn"
+                                            type="button">+</button>
+                                    </div>
+
+                                    <button type="submit" id="modal-submit-btn"
+                                        class="btn btn-black text-white px-4 ms-md-2 modal-submit-btn">
+                                        Add to Cart
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -151,17 +170,10 @@
         </div>
     </div>
 
+    <!-- Panggil file JavaScript terpisah -->
     <script src="{{ asset('js/detail.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const closeBtn = document.getElementById('closeModalBtn');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', function () {
-                    $('#productModal').modal('hide');
-                });
-            }
-        });
-    </script>
+    <script src="{{ asset('js/sugested.js') }}"></script>
+    <script src="{{ asset('js/variant-modal.js') }}"></script>
 
     @if(session('swal_error'))
         <script>

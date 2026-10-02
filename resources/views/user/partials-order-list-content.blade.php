@@ -31,14 +31,21 @@
                         @foreach($order->orderItems as $item)
                             <li class="mb-2 d-flex justify-content-between align-items-center border-bottom pb-2">
                                 <div>
-                                    <span class="fw-bold text-black">{{ $item->product->name ?? 'Produk Dihapus' }}</span> 
-                                    <span class="text-muted small">({{ $item->quantity }}x Rp {{ number_format($item->price, 0, ',', '.') }})</span>
+                                    <span class="fw-bold text-black">
+                                        {{ $item->product->name ?? 'Produk Dihapus' }}
+                                        @if($item->productVariant)
+                                            <span class="text-muted fw-normal" style="font-size: 13px;"> -
+                                                {{ $item->productVariant->name }}</span>
+                                        @endif
+                                    </span>
+                                    <span class="text-muted small">({{ $item->quantity }}x Rp
+                                        {{ number_format($item->price, 0, ',', '.') }})</span>
                                 </div>
-                                
-                                <!-- Tombol Beli Ulang per Produk -->
+
                                 <div>
                                     @if($item->product)
-                                        <a href="{{ route('cart.add', $item->product_id) }}" class="btn btn-outline-dark btn-sm py-0 px-2" style="font-size: 12px;">
+                                        <a href="{{ route('cart.add', $item->product_id) }}{{ $item->product_variant_id ? '?product_variant_id=' . $item->product_variant_id : '' }}"
+                                            class="btn btn-outline-dark btn-sm py-0 px-2" style="font-size: 12px;">
                                             <i class="fa fa-redo me-1"></i> Beli Ulang
                                         </a>
                                     @else
@@ -59,7 +66,8 @@
             <div class="mt-3 pt-2 border-top">
                 @if($order->is_protected)
                     <span class="text-success small fw-bold">
-                        <i class="fa fa-shield-alt me-1"></i> Dilindungi Garansi Retur (Biaya: Rp {{ number_format($order->protection_fee, 0, ',', '.') }})
+                        <i class="fa fa-shield-alt me-1"></i> Dilindungi Garansi Retur (Biaya: Rp
+                        {{ number_format($order->protection_fee, 0, ',', '.') }})
                     </span>
                 @else
                     <span class="text-muted small">
@@ -79,49 +87,69 @@
             </div>
 
             <div>
-                <!-- Tombol Ajukan Retur (Hanya muncul jika MEMILIKI PROTEKSI DAN status 'completed' / 'shipped') -->
                 @if($order->is_protected && in_array($order->status, ['completed', 'shipped']))
-                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#returnModal{{ $order->id }}">
-                        <i class="fa fa-undo me-1"></i> Ajukan Retur / Refund
-                    </button>
+                    @php
+                        $existingReturn = \App\Models\OrderReturn::where('order_id', $order->id)->first();
+                    @endphp
+
+                    @if(!$existingReturn)
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
+                            data-bs-target="#returnModal{{ $order->id }}">
+                            <i class="fa fa-undo me-1"></i> Ajukan Retur / Refund
+                        </button>
+                    @else
+                        <span class="badge bg-secondary">Retur {{ ucfirst($existingReturn->status) }}</span>
+                    @endif
                 @endif
             </div>
         </div>
     </div>
 
-    <!-- MODAL FORM RETUR UNTUK MASING-MASING ORDER (Hanya ada jika is_protected true) -->
     @if($order->is_protected && in_array($order->status, ['completed', 'shipped']))
-        <div class="modal fade" id="returnModal{{ $order->id }}" tabindex="-1" aria-labelledby="returnModalLabel{{ $order->id }}" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <form action="{{ route('order.return', $order->id) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="modal-header">
-                            <h5 class="modal-title fw-bold text-black" id="returnModalLabel{{ $order->id }}">Form Retur Pesanan #{{ $order->id }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body text-start">
-                            
-                            <div class="mb-3">
-                                <label class="form-label text-black fw-bold">Alasan Retur / Kendala <span class="text-danger">*</span></label>
-                                <textarea class="form-control" name="reason" rows="4" placeholder="Jelaskan alasan pengajuan retur atau refund (misal: barang rusak, tidak sesuai deskripsi, dll)..." required></textarea>
-                            </div>
+        @php
+            $existingReturn = $existingReturn ?? \App\Models\OrderReturn::where('order_id', $order->id)->first();
+        @endphp
 
-                            <div class="mb-3">
-                                <label class="form-label text-black fw-bold">Upload Foto Bukti Kondisi Barang <span class="text-danger">*</span></label>
-                                <input type="file" class="form-control" name="proof_image" accept="image/png, image/jpeg, image/jpg" required>
-                                <div class="form-text">Format: JPG, JPEG, PNG. Ukuran maksimal 2MB.</div>
+        @if(!$existingReturn)
+            <div class="modal fade" id="returnModal{{ $order->id }}" tabindex="-1"
+                aria-labelledby="returnModalLabel{{ $order->id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form action="{{ route('order.return', $order->id) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <div class="modal-header">
+                                <h5 class="modal-title fw-bold text-black" id="returnModalLabel{{ $order->id }}">Form Retur Pesanan
+                                    #{{ $order->id }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
+                            <div class="modal-body text-start">
 
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-danger btn-sm">Kirim Pengajuan Retur</button>
-                        </div>
-                    </form>
+                                <div class="mb-3">
+                                    <label class="form-label text-black fw-bold">Alasan Retur / Kendala <span
+                                            class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="reason" rows="4"
+                                        placeholder="Jelaskan alasan pengajuan retur atau refund (misal: barang rusak, tidak sesuai deskripsi, dll)..."
+                                        required></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label text-black fw-bold">Upload Foto Bukti Kondisi Barang <span
+                                            class="text-danger">*</span></label>
+                                    <input type="file" class="form-control" name="proof_image"
+                                        accept="image/png, image/jpeg, image/jpg" required>
+                                    <div class="form-text">Format: JPG, JPEG, PNG. Ukuran maksimal 2MB.</div>
+                                </div>
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-danger btn-sm">Kirim Pengajuan Retur</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        @endif
     @endif
 
 @empty

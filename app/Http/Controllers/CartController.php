@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Setting;
 use App\Models\Product;
+use App\Models\ProductVariant;
 
 class CartController extends Controller
 {
@@ -22,42 +23,55 @@ class CartController extends Controller
         return view('cart', compact('settings', 'cartItems', 'subtotal', 'total'));
     }
 
-    public function add($id)
-    {
-        $product = Product::findOrFail($id);
-        $cart = session()->get('cart', []);
+    public function add(Request $request, $id)
+{
+    $product = Product::findOrFail($id);
+    
+    $variantId = $request->input('product_variant_id');
+    $quantity = (int) $request->input('quantity', 1);
 
-        $currentQty = isset($cart[$id]) ? $cart[$id]['quantity'] + 1 : 1;
+    $price = $product->price;
+    $variantName = '';
 
-        if ($currentQty > $product->stock) {
-            return redirect()->back()->with('error', 'Stok produk tidak mencukupi.');
+    if ($variantId) {
+        $variant = ProductVariant::find($variantId);
+        if ($variant) {
+            $price = $variant->price ?? $product->price;
+            $variantName = ' - ' . $variant->name;
         }
-
-        if (isset($cart[$id])) {
-            $cart[$id]['quantity'] = $currentQty;
-            $cart[$id]['price'] = $product->price;
-        } else {
-            $cart[$id] = [
-                "name" => $product->name,
-                "quantity" => 1,
-                "price" => $product->price,
-                "image" => $product->image
-            ];
-        }
-
-        session()->put('cart', $cart);
-        
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
     }
+
+    $cartKey = $variantId ? $id . '_' . $variantId : $id;
+
+    $cart = session()->get('cart', []);
+
+    if (isset($cart[$cartKey])) {
+        $cart[$cartKey]['quantity'] += $quantity;
+    } else {
+        $cart[$cartKey] = [
+            'product_id' => $product->id,
+            'product_variant_id' => $variantId, 
+            'name' => $product->name . $variantName,
+            'price' => $price,
+            'quantity' => $quantity,
+            'weight' => $product->weight,
+            'image' => $product->image,
+        ];
+    }
+
+    session()->put('cart', $cart);
+
+    return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+}
 
     public function update(Request $request)
     {
         $quantities = $request->input('quantity', []);
         $cart = session()->get('cart', []);
 
-        foreach ($quantities as $id => $quantity) {
-            if (isset($cart[$id])) {
-                $cart[$id]['quantity'] = max(1, (int)$quantity);
+        foreach ($quantities as $cartKey => $quantity) {
+            if (isset($cart[$cartKey])) {
+                $cart[$cartKey]['quantity'] = max(1, (int)$quantity);
             }
         }
 
@@ -79,12 +93,12 @@ class CartController extends Controller
         return redirect()->back()->with('success', 'Cart updated successfully.');
     }
 
-    public function remove($id)
+    public function remove($cartKey)
     {
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$id])) {
-            unset($cart[$id]);
+        if (isset($cart[$cartKey])) {
+            unset($cart[$cartKey]);
             session()->put('cart', $cart);
         }
 

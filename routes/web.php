@@ -20,6 +20,7 @@ Route::get('/shop', [ShopController::class, 'index'])->name('shop');
 Route::get('/about', [AboutController::class, 'index'])->name('about');
 Route::get('/services', [ServicesController::class, 'index'])->name('services');
 Route::get('/blog', [BlogController::class, 'index'])->name('blog');
+Route::get('/shop/suggestions', [ShopController::class, 'suggestions'])->name('shop.suggestions');
 Route::get('/contact', function () {
     return view('contact');
 })->name('contact');
@@ -101,7 +102,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/users', [AdminController::class, 'usersIndex'])->name('users.index');
         Route::post('/users/{id}/status', [AdminController::class, 'usersUpdateStatus'])->name('users.updateStatus');
 
-        // Manajemen Retur Admin (Diperbaiki di sini)
+        // Manajemen Retur Admin
         Route::get('/returns', [AdminController::class, 'returnsIndex'])->name('returns.index');
         Route::post('/returns/{id}/update', [AdminController::class, 'returnsUpdateStatus'])->name('returns.update');
 

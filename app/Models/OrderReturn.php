@@ -9,6 +9,8 @@ class OrderReturn extends Model
 {
     use HasFactory;
 
+    protected $table = 'order_returns'; // <-- Tambahkan baris ini secara eksplisit
+
     protected $fillable = [
         'order_id',
         'user_id',
