@@ -38,6 +38,7 @@
         @endif
     @endauth
 
+    @if(!$__env->hasSection('hide_site_chrome'))
     <!-- Start Header/Navigation -->
     <nav class="custom-navbar navbar navbar-expand-md navbar-dark bg-dark" aria-label="Furni navigation bar">
         <div class="container">
@@ -112,6 +113,7 @@
         </div>
     </nav>
     <!-- End Header/Navigation -->
+    @endif
 
     <!-- Dynamic Hero Section -->
     @yield('hero')
@@ -119,6 +121,7 @@
     <!-- Dynamic Content Section -->
     @yield('content')
 
+    @if(!$__env->hasSection('hide_site_chrome'))
     <!-- Start Footer Section -->
     <footer class="footer-section">
         <div class="container relative">
@@ -235,6 +238,7 @@
         </div>
     </footer>
     <!-- End Footer Section -->
+    @endif
 
     <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('js/tiny-slider.js') }}"></script>

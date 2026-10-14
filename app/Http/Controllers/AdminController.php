@@ -18,12 +18,103 @@ class AdminController extends Controller
     public function index()
     {
         $settings = Setting::pluck('value', 'key')->all();
+
+        // Status pesanan yang sudah dibayar. Setelah "paid", pesanan berlanjut ke
+        // packing -> shipping -> shipped -> completed; semuanya tetap uang masuk.
+        // (Sebelumnya hanya ['paid', 'completed'], jadi pendapatan "turun" saat
+        // pesanan sedang dikemas atau dikirim. Kalau mau kembali ke cara lama,
+        // ganti baris di bawah menjadi: ['paid', 'completed'])
+        $paidStatuses = ['paid', 'packing', 'shipping', 'shipped', 'completed'];
+
         $totalOrders = Order::count();
         $totalProducts = Product::count();
-        $totalRevenue = Order::whereIn('status', ['paid', 'completed'])->sum('total_price');
+        $totalRevenue = Order::whereIn('status', $paidStatuses)->sum('total_price');
         $recentOrders = Order::with('user')->latest()->take(5)->get();
 
-        return view('admin.dashboard', compact('settings', 'totalOrders', 'totalProducts', 'totalRevenue', 'recentOrders'));
+        // ---------- DATA TAMBAHAN UNTUK DASHBOARD ----------
+
+        // Pelanggan (semua user selain admin; role kosong dihitung sebagai pelanggan)
+        $customers = fn() => User::where(function ($q) {
+            $q->where('role', '!=', 'admin')->orWhereNull('role');
+        });
+
+        $totalCustomers = $customers()->count();
+        $newCustomers = $customers()->latest()->take(5)->get();
+
+        // Pendapatan bulan ini vs bulan lalu
+        $revenueThisMonth = Order::whereIn('status', $paidStatuses)
+            ->whereBetween('created_at', [now()->startOfMonth(), now()])
+            ->sum('total_price');
+
+        $lastMonth = now()->subMonthNoOverflow();
+        $revenueLastMonth = Order::whereIn('status', $paidStatuses)
+            ->whereBetween('created_at', [$lastMonth->copy()->startOfMonth(), $lastMonth->copy()->endOfMonth()])
+            ->sum('total_price');
+
+        // Penjualan 7 hari terakhir (hari tanpa penjualan = 0)
+        $salesByDay = Order::whereIn('status', $paidStatuses)
+            ->where('created_at', '>=', now()->subDays(6)->startOfDay())
+            ->selectRaw('DATE(created_at) as day, SUM(total_price) as total')
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->pluck('total', 'day');
+
+        $salesChart = collect(range(6, 0))->map(function ($i) use ($salesByDay) {
+            $date = now()->subDays($i);
+
+            return [
+                'label' => $date->translatedFormat('D'),
+                'date' => $date->translatedFormat('d M'),
+                'total' => (int) ($salesByDay[$date->toDateString()] ?? 0),
+            ];
+        })->values();
+
+        // Jumlah pesanan per status
+        $statusCounts = Order::selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->toArray();
+
+        // Perlu tindakan
+        $pendingVerification = $statusCounts['verifikasi'] ?? 0;
+        $pendingReturns = \App\Models\OrderReturn::where('status', 'pending')->count();
+        $lowStockCount = Product::where('stock', '<=', 5)->count();
+        $lowStockProducts = Product::where('stock', '<=', 5)->orderBy('stock')->take(5)->get();
+
+        // Produk terlaris (jumlah terjual dari item pesanan yang sudah dibayar).
+        // Nama tabel item diambil dari relasi Order::items(), jadi tidak perlu ditebak.
+        $orderTable = (new Order)->getTable();
+        $productTable = (new Product)->getTable();
+        $itemTable = (new Order)->items()->getRelated()->getTable();
+
+        $topProducts = DB::table($itemTable)
+            ->join($orderTable, "$orderTable.id", '=', "$itemTable.order_id")
+            ->join($productTable, "$productTable.id", '=', "$itemTable.product_id")
+            ->whereIn("$orderTable.status", $paidStatuses)
+            ->selectRaw("$productTable.id, $productTable.name, $productTable.image, $productTable.price, SUM($itemTable.quantity) as sold")
+            ->groupBy("$productTable.id", "$productTable.name", "$productTable.image", "$productTable.price")
+            ->orderByDesc('sold')
+            ->take(5)
+            ->get();
+
+        return view('admin.dashboard', compact(
+            'settings',
+            'totalOrders',
+            'totalProducts',
+            'totalRevenue',
+            'recentOrders',
+            'totalCustomers',
+            'newCustomers',
+            'revenueThisMonth',
+            'revenueLastMonth',
+            'salesChart',
+            'statusCounts',
+            'pendingVerification',
+            'pendingReturns',
+            'lowStockCount',
+            'lowStockProducts',
+            'topProducts'
+        ));
+
     }
 
     // --- 1. CRUD PRODUK ---
