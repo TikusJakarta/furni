@@ -27,33 +27,33 @@
 
 @section('content')
     <!-- Start Product Section -->
-    <div class="product-section">
-        <div class="container">
-            <div class="row">
-                <!-- Column 1 -->
-                <div class="col-md-12 col-lg-3 mb-5 mb-lg-0">
-                    <h2 class="mb-4 section-title">{{ $settings['product_section_title'] ?? 'Crafted with excellent material.' }}</h2>
-                    <p class="mb-4">{{ $settings['product_section_desc'] ?? 'Donec vitae odio quis nisl dapibus malesuada. Nullam ac aliquet velit.' }}</p>
-                    <p><a href="{{ route('shop') }}" class="btn">Explore</a></p>
-                </div> 
+<div class="product-section">
+    <div class="container">
+        <div class="row">
+            <!-- Column 1 -->
+            <div class="col-md-12 col-lg-3 mb-5 mb-lg-0">
+                <h2 class="mb-4 section-title">{!! $settings['product_section_title'] ?? 'Crafted with excellent material.' !!}</h2>
+                <p class="mb-4">{{ $settings['product_section_desc'] ?? 'Donec vitae odio quis nisl dapibus malesuada. Nullam ac aliquet velit.' }}</p>
+                <p><a href="{{ route('shop') }}" class="btn">Explore</a></p>
+            </div> 
 
-                <!-- Dynamic Products Loop -->
-                @foreach($products as $product)
-                <div class="col-12 col-md-4 col-lg-3 mb-5 mb-md-0">
-                    <a class="product-item" href="#">
-                        <img src="{{ asset($product->image) }}" class="img-fluid product-thumbnail" alt="{{ $product->name }}">
-                        <h3 class="product-title">{{ $product->name }}</h3>
-                        <strong class="product-price">${{ number_format($product->price, 2) }}</strong>
-                        <span class="icon-cross">
-                            <img src="{{ asset('images/cross.svg') }}" class="img-fluid" alt="Cross">
-                        </span>
-                    </a>
-                </div> 
-                @endforeach
-            </div>
+            <!-- Dynamic Products Loop -->
+            @foreach($products as $product)
+            <div class="col-12 col-md-4 col-lg-3 mb-5 mb-md-0">
+                <a class="product-item" href="{{ route('product.show', $product->id) }}">
+                    <img src="{{ asset($product->image) }}" class="img-fluid product-thumbnail" alt="{{ $product->name }}">
+                    <h3 class="product-title">{{ $product->name }}</h3>
+                    <strong class="product-price">Rp {{ number_format($product->price, 0, ',', '.') }}</strong>
+                    <span class="icon-cross">
+                        <img src="{{ asset('images/cross.svg') }}" class="img-fluid" alt="Cross">
+                    </span>
+                </a>
+            </div> 
+            @endforeach
         </div>
     </div>
-    <!-- End Product Section -->
+</div>
+<!-- End Product Section -->
 
     <!-- Start Why Choose Us Section -->
     <div class="why-choose-section">
@@ -121,27 +121,27 @@
     <!-- End We Help Section -->
 
     <!-- Start Popular Product -->
-    <div class="popular-product">
-        <div class="container">
-            <div class="row">
-                @foreach($popularProducts as $pop)
-                <div class="col-12 col-md-6 col-lg-4 mb-4 mb-lg-0">
-                    <div class="product-item-sm d-flex">
-                        <div class="thumbnail">
-                            <img src="{{ asset($pop->image) }}" alt="Image" class="img-fluid">
-                        </div>
-                        <div class="pt-3">
-                            <h3>{{ $pop->name }}</h3>
-                            <p>{{ $pop->description }}</p>
-                            <p><a href="#">Read More</a></p>
-                        </div>
+<div class="popular-product">
+    <div class="container">
+        <div class="row">
+            @foreach($popularProducts as $pop)
+            <div class="col-12 col-md-6 col-lg-4 mb-4 mb-lg-0">
+                <div class="product-item-sm d-flex">
+                    <div class="thumbnail">
+                        <img src="{{ asset($pop->image) }}" alt="Image" class="img-fluid">
+                    </div>
+                    <div class="pt-3">
+                        <h3>{{ $pop->name }}</h3>
+                        <p>{{ $pop->description }}</p>
+                        <p><a href="{{ route('product.show', $pop->id) }}">Read More</a></p>
                     </div>
                 </div>
-                @endforeach
             </div>
+            @endforeach
         </div>
     </div>
-    <!-- End Popular Product -->
+</div>
+<!-- End Popular Product -->
 
     <!-- Start Testimonial Slider -->
     <div class="testimonial-section">

@@ -1,0 +1,793 @@
+/* ==========================================================
+   Admin Dashboard – Furni
+   Simpan di: public/css/admin-dashboard.css
+   Semua style di-scope ke .admin-dash supaya tidak bentrok
+   dengan tema storefront.
+   ========================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+.admin-dash {
+    --ad-green-900: #1f3a30;
+    --ad-green-700: #3b5d50;
+    --ad-green-100: #e3ece7;
+    --ad-sand-50:   #f6f7f5;
+    --ad-ink:       #1c2a24;
+    --ad-muted:     #6b7a73;
+    --ad-line:      #e4e9e6;
+    --ad-yellow:    #f9bf29;
+
+    --ad-paid-bg: #dcf2e4;      --ad-paid-fg: #1b6b3a;
+    --ad-pending-bg: #fff1cc;   --ad-pending-fg: #8a6100;
+    --ad-done-bg: #dbeaf7;      --ad-done-fg: #1d5a8a;
+    --ad-fail-bg: #fbe0e0;      --ad-fail-fg: #a12b2b;
+
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: var(--ad-ink);
+}
+
+/* ---------- Hero ---------- */
+.admin-dash .admin-hero {
+    background: var(--ad-green-700);
+    background-image: radial-gradient(circle at 90% 20%, rgba(249, 191, 41, .14), transparent 45%);
+    padding: 56px 0 96px;
+}
+.admin-dash .admin-hero h1 {
+    font-weight: 800;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    letter-spacing: -.02em;
+    color: #fff;
+    margin-bottom: .5rem;
+}
+.admin-dash .admin-hero p {
+    max-width: 52ch;
+    line-height: 1.7;
+    margin: 0;
+    color: rgba(255, 255, 255, .72);
+}
+
+/* Konten naik menimpa hero supaya ada kedalaman */
+.admin-dash .admin-body {
+    background: var(--ad-sand-50);
+    padding: 0 0 72px;
+}
+.admin-dash .admin-body > .container {
+    margin-top: -48px;
+    position: relative;
+}
+
+/* ---------- Navigasi ---------- */
+.admin-dash .admin-nav {
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: 0 10px 30px -18px rgba(31, 58, 48, .35);
+    margin-bottom: 28px;
+}
+.admin-dash .admin-nav .nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 4px;
+}
+.admin-dash .admin-nav .nav::-webkit-scrollbar { display: none; }
+.admin-dash .admin-nav .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    padding: 11px 18px;
+    border-radius: 11px;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash .admin-nav .nav-link:hover {
+    background: var(--ad-green-100);
+    color: var(--ad-green-700);
+}
+.admin-dash .admin-nav .nav-link.active {
+    background: var(--ad-green-700);
+    color: #fff;
+}
+.admin-dash .admin-nav .nav-link:focus-visible,
+.admin-dash .section-link:focus-visible {
+    outline: 3px solid var(--ad-yellow);
+    outline-offset: 2px;
+}
+
+/* ---------- Kartu statistik ---------- */
+.admin-dash .stat-card {
+    height: 100%;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.admin-dash .stat-icon {
+    flex: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    background: var(--ad-green-100);
+    color: var(--ad-green-700);
+}
+.admin-dash .stat-label {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    margin: 0 0 4px;
+}
+.admin-dash .stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.1;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Satu elemen yang menonjol: pendapatan */
+.admin-dash .stat-card--primary {
+    background: var(--ad-green-900);
+    border-color: var(--ad-green-900);
+    color: #fff;
+}
+.admin-dash .stat-card--primary .stat-icon {
+    background: var(--ad-yellow);
+    color: var(--ad-green-900);
+}
+.admin-dash .stat-card--primary .stat-label { color: rgba(255, 255, 255, .7); }
+.admin-dash .stat-card--primary .stat-value { color: #fff; }
+
+/* ---------- Tabel pesanan ---------- */
+.admin-dash .panel {
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 16px;
+    overflow: hidden;
+}
+.admin-dash .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 22px 26px;
+    border-bottom: 1px solid var(--ad-line);
+}
+.admin-dash .panel-head h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+.admin-dash .section-link {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--ad-green-700);
+    text-decoration: none;
+    border-radius: 6px;
+}
+.admin-dash .section-link:hover { text-decoration: underline; }
+
+.admin-dash .table-wrap { overflow-x: auto; }
+.admin-dash .orders-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: .92rem;
+}
+.admin-dash .orders-table thead th {
+    background: var(--ad-sand-50);
+    color: var(--ad-muted);
+    font-size: .8rem;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 26px;
+    border: 0;
+    white-space: nowrap;
+}
+.admin-dash .orders-table tbody td {
+    padding: 16px 26px;
+    border: 0;
+    border-bottom: 1px solid var(--ad-line);
+    vertical-align: middle;
+    color: var(--ad-ink);
+}
+.admin-dash .orders-table tbody tr:last-child td { border-bottom: 0; }
+.admin-dash .orders-table tbody tr:hover td { background: #fafbfa; }
+.admin-dash .orders-table .num {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.admin-dash .orders-table .order-id {
+    font-weight: 700;
+    color: var(--ad-green-700);
+}
+.admin-dash .orders-table .muted { color: var(--ad-muted); white-space: nowrap; }
+
+/* ---------- Badge status ---------- */
+.admin-dash .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+.admin-dash .status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.admin-dash .status-paid    { background: var(--ad-paid-bg);    color: var(--ad-paid-fg); }
+.admin-dash .status-pending { background: var(--ad-pending-bg); color: var(--ad-pending-fg); }
+.admin-dash .status-completed { background: var(--ad-done-bg);  color: var(--ad-done-fg); }
+.admin-dash .status-other   { background: var(--ad-fail-bg);    color: var(--ad-fail-fg); }
+
+/* ---------- Empty state ---------- */
+.admin-dash .empty-state {
+    text-align: center;
+    padding: 56px 20px !important;
+    color: var(--ad-muted);
+}
+.admin-dash .empty-state i {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 10px;
+    color: var(--ad-green-700);
+    opacity: .5;
+}
+
+/* ---------- Responsif ---------- */
+@media (max-width: 767.98px) {
+    .admin-dash .admin-hero { padding: 40px 0 80px; }
+    .admin-dash .stat-card { padding: 18px; }
+    .admin-dash .stat-value { font-size: 1.45rem; }
+    .admin-dash .panel-head { padding: 18px; }
+    .admin-dash .orders-table thead th,
+    .admin-dash .orders-table tbody td { padding: 12px 18px; }
+}
+
+
+/* ==========================================================
+   Halaman Kelola Pesanan (orders/index)
+   ========================================================== */
+
+/* Toolbar atas (tombol kembali) */
+.admin-dash .page-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+.admin-dash .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 11px;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--ad-green-700);
+    text-decoration: none;
+    box-shadow: 0 6px 18px -12px rgba(31, 58, 48, .4);
+    transition: background-color .15s ease;
+}
+.admin-dash .btn-back:hover { background: var(--ad-green-100); color: var(--ad-green-900); }
+.admin-dash .btn-back:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+
+/* Alert sukses */
+.admin-dash .ad-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    font-size: .92rem;
+    font-weight: 500;
+}
+.admin-dash .ad-alert--success {
+    background: var(--ad-paid-bg);
+    color: var(--ad-paid-fg);
+    border: 1px solid #bfe3cc;
+}
+
+/* Tabel lebar: scroll horizontal di layar kecil */
+.admin-dash .orders-table--wide { min-width: 980px; }
+.admin-dash .orders-table .cell-main { font-weight: 600; }
+.admin-dash .orders-table .cell-sub {
+    display: block;
+    margin-top: 2px;
+    font-size: .8rem;
+    color: var(--ad-muted);
+}
+.admin-dash .orders-table .courier {
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+/* Tombol lihat bukti */
+.admin-dash .btn-proof {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border: 1px solid var(--ad-green-700);
+    border-radius: 9px;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--ad-green-700);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash .btn-proof:hover { background: var(--ad-green-700); color: #fff; }
+.admin-dash .btn-proof:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+
+/* Pil kecil untuk info bukti bayar */
+.admin-dash .pill {
+    display: inline-block;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.admin-dash .pill--info  { background: var(--ad-done-bg); color: var(--ad-done-fg); }
+.admin-dash .pill--muted { background: #eceeed; color: var(--ad-muted); }
+
+/* Status tambahan (alur pesanan lengkap) */
+.admin-dash .status-unpaid  { background: #eceeed; color: #55635c; }
+.admin-dash .status-verify  { background: var(--ad-pending-bg); color: var(--ad-pending-fg); }
+.admin-dash .status-process { background: #ffe9d6; color: #9a4a0b; }
+.admin-dash .status-shipped { background: #e4e3f7; color: #3d3a8c; }
+
+/* Dropdown ubah status */
+.admin-dash .status-select {
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 168px;
+    padding: 8px 34px 8px 12px;
+    border: 1px solid var(--ad-line);
+    border-radius: 9px;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236b7a73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 500;
+    color: var(--ad-ink);
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.admin-dash .status-select:hover { border-color: var(--ad-green-700); }
+.admin-dash .status-select:focus {
+    outline: none;
+    border-color: var(--ad-green-700);
+    box-shadow: 0 0 0 3px rgba(59, 93, 80, .18);
+}
+
+
+/* ==========================================================
+   Halaman Kelola Produk (products/index)
+   ========================================================== */
+
+/* Toolbar dengan tombol di kiri dan kanan */
+.admin-dash .page-toolbar--split {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Tombol utama (aksi tambah) */
+.admin-dash .btn-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--ad-yellow);
+    border: 1px solid var(--ad-yellow);
+    border-radius: 11px;
+    font-size: .875rem;
+    font-weight: 700;
+    color: var(--ad-green-900);
+    text-decoration: none;
+    box-shadow: 0 8px 18px -10px rgba(249, 191, 41, .9);
+    transition: transform .15s ease, background-color .15s ease;
+}
+.admin-dash .btn-add:hover { background: #fcca4d; color: var(--ad-green-900); transform: translateY(-1px); }
+.admin-dash .btn-add:focus-visible { outline: 3px solid var(--ad-green-700); outline-offset: 2px; }
+
+/* Thumbnail produk */
+.admin-dash .product-thumb {
+    display: block;
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--ad-line);
+    background: var(--ad-sand-50);
+}
+.admin-dash .orders-table .product-name { font-weight: 700; }
+
+/* Indikator stok */
+.admin-dash .stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.admin-dash .stock-flag {
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 700;
+}
+.admin-dash .stock--low .stock-flag { background: var(--ad-pending-bg); color: var(--ad-pending-fg); }
+.admin-dash .stock--out { color: var(--ad-fail-fg); }
+.admin-dash .stock--out .stock-flag { background: var(--ad-fail-bg); color: var(--ad-fail-fg); }
+
+/* Tombol aksi di tabel */
+.admin-dash .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.admin-dash .row-actions form { margin: 0; }
+.admin-dash .btn-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.admin-dash .btn-row--edit {
+    background: var(--ad-green-100);
+    color: var(--ad-green-700);
+}
+.admin-dash .btn-row--edit:hover { background: var(--ad-green-700); color: #fff; }
+.admin-dash .btn-row--delete {
+    background: #fff;
+    border-color: #f0c4c4;
+    color: var(--ad-fail-fg);
+}
+.admin-dash .btn-row--delete:hover { background: var(--ad-fail-fg); border-color: var(--ad-fail-fg); color: #fff; }
+.admin-dash .btn-row:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+
+
+/* ==========================================================
+   Form produk (products/create & products/edit)
+   ========================================================== */
+
+.admin-dash .form-card {
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 10px 30px -22px rgba(31, 58, 48, .45);
+}
+.admin-dash .form-card-head {
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--ad-line);
+}
+.admin-dash .form-card-head h2 { font-size: 1.15rem; font-weight: 700; margin: 0 0 4px; }
+.admin-dash .form-card-head p  { font-size: .875rem; color: var(--ad-muted); margin: 0; }
+
+.admin-dash .ad-field { margin-bottom: 20px; }
+.admin-dash .ad-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--ad-ink);
+}
+.admin-dash .ad-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: .8rem;
+    color: var(--ad-muted);
+}
+
+.admin-dash .ad-input {
+    display: block;
+    width: 100%;
+    padding: 11px 14px;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: .92rem;
+    color: var(--ad-ink);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.admin-dash .ad-input:hover { border-color: #c9d3ce; }
+.admin-dash .ad-input:focus {
+    outline: none;
+    border-color: var(--ad-green-700);
+    box-shadow: 0 0 0 3px rgba(59, 93, 80, .18);
+}
+.admin-dash textarea.ad-input { resize: vertical; min-height: 110px; line-height: 1.6; }
+.admin-dash select.ad-input {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 38px;
+    cursor: pointer;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%236b7a73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+}
+.admin-dash input[type="number"].ad-input { font-variant-numeric: tabular-nums; }
+
+/* Input file */
+.admin-dash input[type="file"].ad-input { padding: 7px; cursor: pointer; }
+.admin-dash input[type="file"].ad-input::file-selector-button {
+    margin-right: 12px;
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--ad-green-100);
+    color: var(--ad-green-700);
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash input[type="file"].ad-input::file-selector-button:hover {
+    background: var(--ad-green-700);
+    color: #fff;
+}
+
+/* Gambar saat ini */
+.admin-dash .current-image {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    margin-bottom: 14px;
+    background: var(--ad-sand-50);
+    border: 1px dashed #cfd8d3;
+    border-radius: 12px;
+}
+.admin-dash .current-image img {
+    width: 84px;
+    height: 84px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--ad-line);
+    background: #fff;
+}
+.admin-dash .current-image strong { display: block; font-size: .875rem; }
+.admin-dash .current-image span   { font-size: .8rem; color: var(--ad-muted); }
+
+/* Alert error validasi */
+.admin-dash .ad-alert--error {
+    align-items: flex-start;
+    background: var(--ad-fail-bg);
+    color: var(--ad-fail-fg);
+    border: 1px solid #f0c4c4;
+}
+.admin-dash .ad-alert--error ul { margin: 0; padding-left: 18px; }
+
+/* Tombol aksi form */
+.admin-dash .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid var(--ad-line);
+}
+.admin-dash .btn-submit {
+    flex: 1;
+    padding: 13px 20px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--ad-green-700);
+    color: #fff;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color .15s ease;
+}
+.admin-dash .btn-submit:hover { background: var(--ad-green-900); }
+.admin-dash .btn-submit:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+.admin-dash .btn-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 13px 22px;
+    border: 1px solid var(--ad-line);
+    border-radius: 11px;
+    background: #fff;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    text-decoration: none;
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash .btn-cancel:hover { background: var(--ad-sand-50); color: var(--ad-ink); }
+.admin-dash .btn-cancel:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+
+@media (max-width: 575.98px) {
+    .admin-dash .form-card { padding: 20px; }
+    .admin-dash .form-actions { flex-direction: column-reverse; }
+}
+
+
+/* ==========================================================
+   Halaman Kelola Retur & Refund (returns/index)
+   ========================================================== */
+
+/* Alert yang bisa ditutup (Bootstrap alert-dismissible) */
+.admin-dash .ad-alert.alert-dismissible {
+    position: relative;
+    padding-right: 48px;
+}
+.admin-dash .ad-alert .btn-close {
+    padding: 18px 16px;
+    opacity: .55;
+}
+.admin-dash .ad-alert .btn-close:hover { opacity: .9; }
+
+/* Kolom alasan retur: boleh turun baris, tidak melebar */
+.admin-dash .orders-table .reason-cell {
+    max-width: 260px;
+    min-width: 200px;
+    line-height: 1.55;
+    white-space: normal;
+}
+.admin-dash .orders-table--returns { min-width: 1000px; }
+
+/* Tombol setujui */
+.admin-dash .btn-row--approve {
+    background: var(--ad-paid-bg);
+    color: var(--ad-paid-fg);
+}
+.admin-dash .btn-row--approve:hover { background: var(--ad-paid-fg); color: #fff; }
+
+/* Keterangan "selesai diproses" */
+.admin-dash .done-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .8rem;
+    color: var(--ad-muted);
+    white-space: nowrap;
+}
+
+
+/* ==========================================================
+   Halaman Kelola Kupon (coupons/index)
+   ========================================================== */
+
+/* Kode promo tampil seperti tiket kupon */
+.admin-dash .coupon-code {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1.5px dashed var(--ad-green-700);
+    border-radius: 8px;
+    background: var(--ad-green-100);
+    color: var(--ad-green-900);
+    font-weight: 800;
+    letter-spacing: .06em;
+    white-space: nowrap;
+}
+
+/* Nilai diskon */
+.admin-dash .discount-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Masa berlaku */
+.admin-dash .expiry {
+    display: block;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.admin-dash .expiry--forever { color: var(--ad-muted); }
+.admin-dash .expiry--expired { color: var(--ad-fail-fg); }
+.admin-dash .expiry-flag {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--ad-fail-bg);
+    color: var(--ad-fail-fg);
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   Form kupon (coupons/create)
+   ========================================================== */
+.admin-dash .ad-req { color: var(--ad-fail-fg); margin-left: 2px; }
+
+/* Input kode kupon: tampil kapital & berjarak, seperti hasil akhirnya */
+.admin-dash .ad-input--code {
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: .06em;
+}
+.admin-dash .ad-input--code::placeholder {
+    text-transform: none;
+    font-weight: 400;
+    letter-spacing: normal;
+}
+
+
+/* ==========================================================
+   Halaman Kelola Pengguna (users/index)
+   ========================================================== */
+.admin-dash .user-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.admin-dash .user-avatar {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--ad-green-100);
+    color: var(--ad-green-700);
+    font-size: .85rem;
+    font-weight: 800;
+}
+.admin-dash .orders-table--users { min-width: 860px; }
+
+
+/* ==========================================================
+   Halaman CMS Pengaturan Web (settings/index)
+   ========================================================== */
+.admin-dash .form-section + .form-section {
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--ad-line);
+}
+.admin-dash .form-section-head { margin-bottom: 20px; }
+.admin-dash .form-section-head h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+.admin-dash .form-section-head p {
+    font-size: .85rem;
+    color: var(--ad-muted);
+    margin: 0;
+}
+/* Kelompok field di dalam satu bagian */
+.admin-dash .form-subtitle {
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--ad-green-700);
+    margin: 8px 0 14px;
+}
+.admin-dash .form-subtitle:not(:first-of-type) { margin-top: 26px; }
+.admin-dash .form-card--wide .form-actions { margin-top: 32px; }

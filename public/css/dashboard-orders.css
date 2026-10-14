@@ -1,0 +1,424 @@
+/* ==========================================================================
+   Pesanan Saya — dashboard-orders.css
+   Palet disamakan dengan tema Furni (hijau #3b5d50, kuning #f9bf29,
+   teks #2f2f2f, font Inter bawaan tema). Tidak ada font/warna asing.
+   ========================================================================== */
+
+:root {
+    --ord-green: #3b5d50;
+    --ord-green-deep: #2f4a40;
+    --ord-accent: #f9bf29;
+    --ord-ink: #2f2f2f;
+    --ord-text: #6a6a6a;
+    --ord-muted: #9a9a9a;
+    --ord-line: #dce5e4;
+    --ord-sunken: #eff2f1;
+    --ord-footer: #f7f9f8;
+    --ord-radius: 12px;
+}
+
+/* ---------- Hero ---------- */
+.hero.py-4 {
+    padding-top: 2.25rem !important;
+    padding-bottom: 2.25rem !important;
+}
+
+.hero .intro-excerpt h1 {
+    font-weight: 600 !important;
+    letter-spacing: -0.01em;
+}
+
+.hero .intro-excerpt h1::after {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 3px;
+    margin-top: 12px;
+    background: var(--ord-accent);
+    border-radius: 2px;
+}
+
+.hero .intro-excerpt p {
+    font-size: 0.95rem;
+}
+
+/* ---------- Alert ---------- */
+body:has(#orderTabs) .alert {
+    border-radius: 10px !important;
+    font-size: 0.9rem;
+    box-shadow: none !important;
+    border: 1px solid var(--ord-line) !important;
+}
+
+/* ---------- Tabs ---------- */
+.custom-nav-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--ord-line);
+    margin-bottom: 1.75rem !important;
+}
+
+.custom-nav-pills::-webkit-scrollbar {
+    display: none;
+}
+
+.custom-nav-pills .nav-link {
+    white-space: nowrap;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ord-text) !important;
+    font-size: 0.88rem;
+    padding: 0.5rem 1.1rem !important;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.custom-nav-pills .nav-link:hover {
+    color: var(--ord-green) !important;
+    border-color: var(--ord-line);
+    background: var(--ord-sunken);
+}
+
+.custom-nav-pills .nav-link.active {
+    background: var(--ord-green);
+    border-color: var(--ord-green);
+    color: #fff !important;
+}
+
+.custom-nav-pills .nav-link:focus-visible {
+    outline: 2px solid var(--ord-green);
+    outline-offset: 2px;
+}
+
+.custom-nav-pills .badge {
+    background: var(--ord-sunken) !important;
+    color: var(--ord-green) !important;
+    font-weight: 600;
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.custom-nav-pills .nav-link.active .badge {
+    background: var(--ord-accent) !important;
+    color: var(--ord-ink) !important;
+}
+
+/* ---------- Kartu pesanan ---------- */
+.modern-order-card {
+    --st: var(--ord-muted);
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--ord-line) !important;
+    border-radius: var(--ord-radius) !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    animation: ord-rise 0.4s ease both;
+}
+
+.modern-order-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--st);
+    z-index: 1;
+}
+
+.modern-order-card:hover {
+    border-color: #c4d3d0 !important;
+    box-shadow: 0 8px 24px -14px rgba(59, 93, 80, 0.35) !important;
+}
+
+.modern-order-card.status-pending    { --st: #e0a915; }
+.modern-order-card.status-verifikasi,
+.modern-order-card.status-paid,
+.modern-order-card.status-packing    { --st: #5b7c8d; }
+.modern-order-card.status-shipping,
+.modern-order-card.status-shipped    { --st: #4f8a73; }
+.modern-order-card.status-completed  { --st: var(--ord-green); }
+.modern-order-card.status-cancelled  { --st: #b4443f; }
+
+.tab-pane > .modern-order-card:nth-child(2) { animation-delay: 0.05s; }
+.tab-pane > .modern-order-card:nth-child(3) { animation-delay: 0.10s; }
+.tab-pane > .modern-order-card:nth-child(4) { animation-delay: 0.15s; }
+.tab-pane > .modern-order-card:nth-child(n+5) { animation-delay: 0.2s; }
+
+@keyframes ord-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Header kartu ---------- */
+.modern-order-card > .card-header {
+    background: transparent !important;
+    padding: 1.1rem 1.5rem 1rem 1.6rem !important;
+    border-bottom: 1px solid var(--ord-line) !important;
+}
+
+.modern-order-card .card-header .badge.font-monospace {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    color: var(--ord-ink) !important;
+    font-size: 13px !important;
+    letter-spacing: 0.02em !important;
+}
+
+.modern-order-card .card-header .badge.font-monospace::before {
+    content: "No. ";
+    color: var(--ord-muted);
+    font-weight: 400;
+}
+
+.modern-order-card .card-header .text-muted.small {
+    font-size: 0.8rem !important;
+    color: var(--ord-text) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Badge status ---------- */
+.custom-status-badge {
+    --st: var(--ord-text);
+    --st-bg: var(--ord-sunken);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px 5px 10px;
+    border-radius: 999px;
+    background: var(--st-bg);
+    color: var(--st);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.custom-status-badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.status-badge-pending    { --st: #94690a; --st-bg: #fdf3d6; }
+.status-badge-verifikasi,
+.status-badge-paid,
+.status-badge-packing    { --st: #46677a; --st-bg: #e8eff3; }
+.status-badge-shipping,
+.status-badge-shipped    { --st: #3c7561; --st-bg: #e5f1ec; }
+.status-badge-completed  { --st: var(--ord-green); --st-bg: #dfeae5; }
+.status-badge-cancelled  { --st: #a33a36; --st-bg: #f9e7e6; }
+
+/* ---------- Daftar produk ---------- */
+.modern-order-card > .card-body:nth-of-type(1) {
+    padding: 0.4rem 1.5rem 1.25rem 1.6rem !important;
+}
+
+.order-item-row {
+    border-bottom: 1px solid var(--ord-line) !important;
+}
+
+.order-item-row:last-child {
+    border-bottom: 0 !important;
+}
+
+.order-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--ord-line);
+    background: var(--ord-sunken);
+}
+
+.order-item-row h6 {
+    color: var(--ord-ink) !important;
+}
+
+.order-item-row h6 .badge {
+    background: var(--ord-sunken) !important;
+    color: var(--ord-text) !important;
+    border-color: var(--ord-line) !important;
+    border-radius: 6px;
+}
+
+.order-item-row .text-muted.small {
+    color: var(--ord-text) !important;
+    font-variant-numeric: tabular-nums;
+}
+
+.order-item-row .text-dark.fw-semibold {
+    color: var(--ord-ink) !important;
+}
+
+/* ---------- Ringkasan proteksi & total ---------- */
+.modern-order-card .row.bg-light {
+    background: var(--ord-sunken) !important;
+    border-radius: 10px !important;
+    margin-top: 0.5rem !important;
+}
+
+.modern-order-card .row.bg-light h5 {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums;
+    color: var(--ord-green) !important;
+}
+
+.modern-order-card .row.bg-light .d-block.text-muted {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 10px !important;
+    margin-bottom: 2px;
+    color: var(--ord-text) !important;
+}
+
+.modern-order-card .row.bg-light .text-success,
+.modern-order-card .row.bg-light .fa-shield-alt {
+    color: var(--ord-green) !important;
+}
+
+/* ---------- Footer aksi ---------- */
+.modern-order-card > .card-body:last-child {
+    background: var(--ord-footer) !important;
+    border-top: 1px solid var(--ord-line) !important;
+    padding: 0.9rem 1.5rem 0.9rem 1.6rem !important;
+}
+
+/* ---------- Tombol ---------- */
+.modern-order-card .btn {
+    transition: background-color 0.15s ease, color 0.15s ease,
+                border-color 0.15s ease, transform 0.15s ease;
+}
+
+.modern-order-card .btn:active {
+    transform: scale(0.97);
+}
+
+.modern-order-card .btn-outline-dark {
+    color: var(--ord-green);
+    border-color: var(--ord-green);
+    background: transparent;
+}
+
+.modern-order-card .btn-outline-dark:hover {
+    background: var(--ord-green);
+    border-color: var(--ord-green);
+    color: #fff;
+}
+
+.modern-order-card .btn-dark {
+    background: var(--ord-green);
+    border-color: var(--ord-green);
+    box-shadow: none !important;
+}
+
+.modern-order-card .btn-dark:hover {
+    background: var(--ord-green-deep);
+    border-color: var(--ord-green-deep);
+}
+
+.modern-order-card .btn-outline-danger {
+    color: #a33a36;
+    border-color: #e8c4c2;
+}
+
+.modern-order-card .btn-outline-danger:hover {
+    background: #a33a36;
+    border-color: #a33a36;
+    color: #fff;
+}
+
+.modern-order-card .badge.bg-secondary {
+    background: var(--ord-sunken) !important;
+    color: var(--ord-text) !important;
+    border: 1px solid var(--ord-line);
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--ord-green);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+/* ---------- Modal retur ---------- */
+.modal-content.rounded-4 {
+    border-radius: 16px !important;
+}
+
+.modal-content .modal-title {
+    font-weight: 700 !important;
+}
+
+.modal-content .form-control {
+    background: var(--ord-sunken) !important;
+    border: 1px solid transparent !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.modal-content .form-control:focus {
+    background: #fff !important;
+    border-color: var(--ord-green) !important;
+    box-shadow: 0 0 0 3px rgba(59, 93, 80, 0.12);
+}
+
+.modal-content .btn-danger {
+    background: #a33a36;
+    border-color: #a33a36;
+}
+
+.modal-content .btn-danger:hover {
+    background: #8a2f2c;
+    border-color: #8a2f2c;
+}
+
+/* ---------- Kondisi kosong ---------- */
+.tab-pane > .text-center.bg-white {
+    background: var(--ord-footer) !important;
+    border: 1.5px dashed var(--ord-line) !important;
+    border-radius: var(--ord-radius) !important;
+    box-shadow: none !important;
+}
+
+.tab-pane > .text-center.bg-white .fa-shopping-bag {
+    color: var(--ord-green);
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 767.98px) {
+    .modern-order-card > .card-header,
+    .modern-order-card > .card-body:nth-of-type(1),
+    .modern-order-card > .card-body:last-child {
+        padding-left: 1.15rem !important;
+        padding-right: 1.15rem !important;
+    }
+
+    .order-thumb {
+        width: 56px;
+        height: 56px;
+    }
+
+    .modern-order-card .row.bg-light .col-md-5 {
+        margin-top: 0.5rem;
+        padding-top: 0.6rem;
+        border-top: 1px dashed var(--ord-line);
+    }
+
+    .modern-order-card > .card-body:last-child .btn {
+        width: 100%;
+    }
+
+    .modern-order-card > .card-body:last-child > div {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modern-order-card {
+        animation: none;
+        transition: none;
+    }
+}

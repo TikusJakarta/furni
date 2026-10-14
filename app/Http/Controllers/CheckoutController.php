@@ -309,7 +309,7 @@ class CheckoutController extends Controller
             $shippingCost = (float) $request->shipping_cost;
             $useProtection = $request->has('use_protection');
             $protectionFee = $useProtection ? ($subtotal * 0.005) : 0;
-            $totalPrice = $subtotalAfterDiscount + $shippingCost;
+            $totalPrice = $subtotalAfterDiscount + $shippingCost + $protectionFee;
 
             $order = Order::create([
                 'user_id' => auth()->id(),

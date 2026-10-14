@@ -3,110 +3,110 @@
 @section('title', ($settings['admin_dashboard_title'] ?? 'Admin Dashboard') . ' - ' . ($settings['brand_name'] ?? 'Furni'))
 
 @section('content')
-    <div class="hero">
-        <div class="container">
-            <div class="row justify-content-between">
-                <div class="col-lg-5">
-                    <div class="intro-excerpt">
+    <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">
+
+    <div class="admin-dash">
+
+        <!-- HERO -->
+        <div class="hero admin-hero">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-7">
                         <h1>{{ $settings['admin_dashboard_title'] ?? 'Admin Dashboard' }}</h1>
-                        <p class="text-white-50">
+                        <p>
                             {{ $settings['admin_dashboard_welcome'] ?? 'Selamat datang kembali, ' . auth()->user()->name . '! Kelola toko kamu dengan mudah dari sini.' }}
                         </p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="untree_co-section before-footer-section">
-        <div class="container">
+        <div class="admin-body">
+            <div class="container">
 
-            <!-- ADMIN NAVIGATION TABS (Navbar Cepat Antar Menu) -->
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card border-0 shadow-sm bg-white p-2">
-                        <ul class="nav nav-pills nav-fill gap-2">
-                            <li class="nav-item">
-                                <a href="{{ route('admin.dashboard') }}" class="nav-link active fw-bold py-2">
-                                    <i class="fa fa-home me-1"></i> Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.products.index') }}" class="nav-link text-dark fw-bold py-2">
-                                    <i class="fa fa-box me-1"></i> Produk
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.orders.index') }}" class="nav-link text-dark fw-bold py-2">
-                                    <i class="fa fa-shopping-cart me-1"></i> Pesanan
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.returns.index') }}" class="nav-link text-dark fw-bold py-2">
-                                    <i class="fa fa-undo me-1"></i> Retur
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.coupons.index') }}" class="nav-link text-dark fw-bold py-2">
-                                    <i class="fa fa-tags me-1"></i> Kupon
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.users.index') }}" class="nav-link text-dark fw-bold py-2">
-                                    <i class="fa fa-users me-1"></i> Pengguna
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a href="{{ route('admin.settings.index') }}" class="nav-link text-dark fw-bold py-2">
-                                    <i class="fa fa-cogs me-1"></i> Pengaturan
-                                </a>
-                            </li>
-                        </ul>
+                <!-- NAVIGASI ADMIN -->
+                <nav class="admin-nav" aria-label="Menu admin">
+                    <ul class="nav">
+                        <li class="nav-item flex-fill">
+                            <a href="{{ route('admin.dashboard') }}" class="nav-link active" aria-current="page">
+                                <i class="fa fa-home"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                            <a href="{{ route('admin.products.index') }}" class="nav-link">
+                                <i class="fa fa-box"></i> Produk
+                            </a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                            <a href="{{ route('admin.orders.index') }}" class="nav-link">
+                                <i class="fa fa-shopping-cart"></i> Pesanan
+                            </a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                            <a href="{{ route('admin.returns.index') }}" class="nav-link">
+                                <i class="fa fa-undo"></i> Retur
+                            </a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                            <a href="{{ route('admin.coupons.index') }}" class="nav-link">
+                                <i class="fa fa-tags"></i> Kupon
+                            </a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                            <a href="{{ route('admin.users.index') }}" class="nav-link">
+                                <i class="fa fa-users"></i> Pengguna
+                            </a>
+                        </li>
+                        <li class="nav-item flex-fill">
+                            <a href="{{ route('admin.settings.index') }}" class="nav-link">
+                                <i class="fa fa-cogs"></i> Pengaturan
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- STATISTIK -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fa fa-box"></i></div>
+                            <div>
+                                <p class="stat-label">{{ $settings['admin_card_total_products'] ?? 'Total Produk' }}</p>
+                                <p class="stat-value">{{ $totalProducts }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class="fa fa-shopping-cart"></i></div>
+                            <div>
+                                <p class="stat-label">{{ $settings['admin_card_total_orders'] ?? 'Total Pesanan' }}</p>
+                                <p class="stat-value">{{ $totalOrders }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card stat-card--primary">
+                            <div class="stat-icon"><i class="fa fa-wallet"></i></div>
+                            <div>
+                                <p class="stat-label">{{ $settings['admin_card_total_revenue'] ?? 'Pendapatan (Paid)' }}</p>
+                                <p class="stat-value">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Informasi Statistik / Cards -->
-            <div class="row mb-5">
-                <div class="col-md-4 mb-3">
-                    <div class="card border-0 shadow-sm p-4 bg-light">
-                        <h6 class="text-muted text-uppercase small">
-                            {{ $settings['admin_card_total_products'] ?? 'Total Produk' }}
-                        </h6>
-                        <h3 class="font-weight-bold text-black">{{ $totalProducts }}</h3>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="card border-0 shadow-sm p-4 bg-light">
-                        <h6 class="text-muted text-uppercase small">
-                            {{ $settings['admin_card_total_orders'] ?? 'Total Pesanan' }}
-                        </h6>
-                        <h3 class="font-weight-bold text-black">{{ $totalOrders }}</h3>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="card border-0 shadow-sm p-4 bg-light">
-                        <h6 class="text-muted text-uppercase small">
-                            {{ $settings['admin_card_total_revenue'] ?? 'Pendapatan (Paid)' }}
-                        </h6>
-                        <h3 class="font-weight-bold text-success">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</h3>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tabel Pesanan Terbaru -->
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="h4 text-black m-0">
-                            {{ $settings['admin_recent_orders_title'] ?? 'Pesanan Terbaru Masuk' }}
-                        </h3>
-                        <a href="{{ route('admin.orders.index') }}" class="text-decoration-underline small">
+                <!-- PESANAN TERBARU -->
+                <div class="panel">
+                    <div class="panel-head">
+                        <h2>{{ $settings['admin_recent_orders_title'] ?? 'Pesanan Terbaru Masuk' }}</h2>
+                        <a href="{{ route('admin.orders.index') }}" class="section-link">
                             {{ $settings['admin_link_view_all_orders'] ?? 'Lihat Semua Pesanan' }} &rarr;
                         </a>
                     </div>
-                    <div class="site-blocks-table">
-                        <table class="table">
+
+                    <div class="table-wrap">
+                        <table class="orders-table">
                             <thead>
                                 <tr>
                                     <th>{{ $settings['admin_th_order_id'] ?? 'ID Order' }}</th>
@@ -119,23 +119,24 @@
                             <tbody>
                                 @forelse($recentOrders as $order)
                                     <tr>
-                                        <td><strong>#{{ $order->id }}</strong></td>
+                                        <td class="order-id">#{{ $order->id }}</td>
                                         <td>{{ $order->first_name }} {{ $order->last_name }}</td>
-                                        <td>Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
+                                        <td class="num">Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
                                         <td>
-                                            <span class="badge 
-                                                    @if($order->status == 'paid') bg-success 
-                                                    @elseif($order->status == 'pending') bg-warning text-dark 
-                                                    @elseif($order->status == 'completed') bg-info text-dark
-                                                    @else bg-danger @endif">
+                                            <span class="status-badge
+                                                @if($order->status == 'paid') status-paid
+                                                @elseif($order->status == 'pending') status-pending
+                                                @elseif($order->status == 'completed') status-completed
+                                                @else status-other @endif">
                                                 {{ strtoupper($order->status) }}
                                             </span>
                                         </td>
-                                        <td>{{ $order->created_at->format('d M Y, H:i') }}</td>
+                                        <td class="muted">{{ $order->created_at->format('d M Y, H:i') }}</td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-4 text-muted">
+                                        <td colspan="5" class="empty-state">
+                                            <i class="fa fa-inbox"></i>
                                             {{ $settings['admin_empty_orders'] ?? 'Belum ada pesanan masuk.' }}
                                         </td>
                                     </tr>
@@ -144,8 +145,8 @@
                         </table>
                     </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
 @endsection

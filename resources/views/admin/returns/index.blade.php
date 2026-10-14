@@ -3,33 +3,39 @@
 @section('title', 'Kelola Retur & Refund - Admin Furni')
 
 @section('content')
-    <div class="hero">
-        <div class="container">
-            <div class="row justify-content-between">
-                <div class="col-lg-5">
-                    <div class="intro-excerpt">
+    <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}">
+
+    <div class="admin-dash">
+
+        <!-- HERO -->
+        <div class="hero admin-hero">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-7">
                         <h1>Kelola Retur & Refund</h1>
-                        <p class="text-white-50">Daftar pengajuan retur barang dari pelanggan.</p>
+                        <p>Daftar pengajuan retur barang dari pelanggan.</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="untree_co-section before-footer-section">
-        <div class="container">
+        <div class="admin-body">
+            <div class="container">
 
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="page-toolbar">
+                    <a href="{{ route('admin.dashboard') }}" class="btn-back">&larr; Kembali ke Dashboard</a>
                 </div>
-            @endif
 
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="site-blocks-table">
-                        <table class="table">
+                @if(session('success'))
+                    <div class="ad-alert ad-alert--success alert alert-dismissible fade show" role="alert">
+                        <i class="fa fa-check-circle"></i> {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                    </div>
+                @endif
+
+                <div class="panel">
+                    <div class="table-wrap">
+                        <table class="orders-table orders-table--returns">
                             <thead>
                                 <tr>
                                     <th>ID Retur</th>
@@ -43,55 +49,65 @@
                             </thead>
                             <tbody>
                                 @forelse($returns as $item)
-                                <tr>
-                                    <td><strong>#{{ $item->id }}</strong></td>
-                                    <td>#{{ $item->order_id }}</td>
-                                    <td>{{ $item->user->name ?? 'User Dihapus' }}</td>
-                                    <td style="max-width: 250px;">{{ $item->reason }}</td>
-                                    <td>
-                                        <a href="{{ asset('storage/' . $item->proof_image) }}" target="_blank" class="btn btn-sm btn-outline-dark">
-                                            <i class="fa fa-image me-1"></i> Lihat Foto
-                                        </a>
-                                    </td>
-                                    <td>
-                                        @if($item->status == 'pending')
-                                            <span class="badge bg-warning text-dark px-3 py-2">Pending</span>
-                                        @elseif($item->status == 'approved')
-                                            <span class="badge bg-success px-3 py-2">Disetujui</span>
-                                        @else
-                                            <span class="badge bg-danger px-3 py-2">Ditolak</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($item->status == 'pending')
-                                            <div class="d-flex gap-1">
-                                                <form action="{{ route('admin.returns.update', $item->id) }}" method="POST">
-                                                    @csrf
-                                                    <input type="hidden" name="status" value="approved">
-                                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Setujui pengajuan retur ini?')">Terima</button>
-                                                </form>
-                                                <form action="{{ route('admin.returns.update', $item->id) }}" method="POST">
-                                                    @csrf
-                                                    <input type="hidden" name="status" value="rejected">
-                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tolak pengajuan retur ini?')">Tolak</button>
-                                                </form>
-                                            </div>
-                                        @else
-                                            <span class="text-muted small italic">Selesai diproses</span>
-                                        @endif
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td class="order-id">#{{ $item->id }}</td>
+                                        <td class="num">#{{ $item->order_id }}</td>
+                                        <td class="cell-main">{{ $item->user->name ?? 'User Dihapus' }}</td>
+                                        <td class="reason-cell">{{ $item->reason }}</td>
+                                        <td>
+                                            <a href="{{ asset('storage/' . $item->proof_image) }}" target="_blank" rel="noopener"
+                                                class="btn-proof">
+                                                <i class="fa fa-image"></i> Lihat Foto
+                                            </a>
+                                        </td>
+                                        <td>
+                                            @if($item->status == 'pending')
+                                                <span class="status-badge status-verify">Pending</span>
+                                            @elseif($item->status == 'approved')
+                                                <span class="status-badge status-paid">Disetujui</span>
+                                            @else
+                                                <span class="status-badge status-other">Ditolak</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($item->status == 'pending')
+                                                <div class="row-actions">
+                                                    <form action="{{ route('admin.returns.update', $item->id) }}" method="POST">
+                                                        @csrf
+                                                        <input type="hidden" name="status" value="approved">
+                                                        <button type="submit" class="btn-row btn-row--approve"
+                                                            onclick="return confirm('Setujui pengajuan retur ini?')">
+                                                            <i class="fa fa-check"></i> Terima
+                                                        </button>
+                                                    </form>
+                                                    <form action="{{ route('admin.returns.update', $item->id) }}" method="POST">
+                                                        @csrf
+                                                        <input type="hidden" name="status" value="rejected">
+                                                        <button type="submit" class="btn-row btn-row--delete"
+                                                            onclick="return confirm('Tolak pengajuan retur ini?')">
+                                                            <i class="fa fa-times"></i> Tolak
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @else
+                                                <span class="done-note"><i class="fa fa-check-circle"></i> Selesai diproses</span>
+                                            @endif
+                                        </td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">Belum ada pengajuan retur dari pelanggan.</td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="7" class="empty-state">
+                                            <i class="fa fa-undo"></i>
+                                            Belum ada pengajuan retur dari pelanggan.
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
 @endsection

@@ -254,6 +254,34 @@
         </script>
     @endif
 
+    @if(session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: "{{ session('success') }}",
+                showConfirmButton: false,
+                timer: 1800,
+                timerProgressBar: true
+            });
+        });
+    </script>
+@endif
+
+@if(session('error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: "{{ session('error') }}",
+                confirmButtonColor: '#2f463d'
+            });
+        });
+    </script>
+@endif
+
     @include('partials.order-swal')
     @include('partials.payment-swal')
     @stack('scripts')
