@@ -8,12 +8,74 @@ use App\Models\Product;
 use App\Models\Setting;
 use App\Models\LimitStock;
 use App\Models\Coupon;
-use App\Models\User; // <-- Tambahkan model User di sini
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Auth; // <-- Diperlukan untuk Auth::attempt / Auth::logout
 
 class AdminController extends Controller
 {
+    // --- AUTENTIKASI ADMIN ---
+    public function showLoginForm()
+    {
+        if (Auth::check() && Auth::user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        
+        $settings = Setting::pluck('value', 'key')->all();
+        return view('admin.auth.login', compact('settings'));
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            $user = auth()->user();
+
+            // Pastikan hanya role admin yang bisa masuk
+            if ($user->role !== 'admin') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Akses ditolak. Akun ini bukan akun Administrator.',
+                ])->withInput();
+            }
+
+            // Cek status banned
+            if ($user->status == 'banned') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Akun Administrator Anda telah diblokir.',
+                ])->withInput();
+            }
+
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        return back()->withErrors([
+            'email' => 'Email atau password administrator salah.',
+        ])->withInput();
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('admin.login')->with('success', 'Berhasil keluar dari panel admin.');
+    }
+
     // Dashboard Utama Admin
     public function index()
     {
@@ -21,9 +83,6 @@ class AdminController extends Controller
 
         // Status pesanan yang sudah dibayar. Setelah "paid", pesanan berlanjut ke
         // packing -> shipping -> shipped -> completed; semuanya tetap uang masuk.
-        // (Sebelumnya hanya ['paid', 'completed'], jadi pendapatan "turun" saat
-        // pesanan sedang dikemas atau dikirim. Kalau mau kembali ke cara lama,
-        // ganti baris di bawah menjadi: ['paid', 'completed'])
         $paidStatuses = ['paid', 'packing', 'shipping', 'shipped', 'completed'];
 
         $totalOrders = Order::count();
@@ -80,8 +139,7 @@ class AdminController extends Controller
         $lowStockCount = Product::where('stock', '<=', 5)->count();
         $lowStockProducts = Product::where('stock', '<=', 5)->orderBy('stock')->take(5)->get();
 
-        // Produk terlaris (jumlah terjual dari item pesanan yang sudah dibayar).
-        // Nama tabel item diambil dari relasi Order::items(), jadi tidak perlu ditebak.
+        // Produk terlaris
         $orderTable = (new Order)->getTable();
         $productTable = (new Product)->getTable();
         $itemTable = (new Order)->items()->getRelated()->getTable();
@@ -327,7 +385,6 @@ class AdminController extends Controller
     public function usersIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
-        // Menampilkan semua user kecuali admin yang sedang login
         $users = User::where('id', '!=', auth()->id())->latest()->get();
         return view('admin.users.index', compact('settings', 'users'));
     }

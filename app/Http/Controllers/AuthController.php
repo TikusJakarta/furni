@@ -15,20 +15,18 @@ class AuthController extends Controller
         return view('auth.login', compact('settings'));
     }
 
-    public function login(Request $request)
+   public function login(Request $request)
 {
     $credentials = $request->validate([
         'email' => 'required|email',
         'password' => 'required',
     ]);
 
-    // Autentikasi login
     if (Auth::attempt($credentials)) {
         $request->session()->regenerate();
-
         $user = auth()->user();
 
-        // Hanya blokir jika statusnya 'banned'
+        // Cek apakah akun diblokir (banned)
         if ($user->status == 'banned') {
             Auth::logout();
             $request->session()->invalidate();
@@ -39,14 +37,11 @@ class AuthController extends Controller
             ])->withInput();
         }
 
-        // Jika status 'suspended', mereka tetap dibolehkan login dan masuk,
-        // tapi nanti otomatis dicegat saat mau checkout (sudah diatur di CheckoutController).
-
         if ($user->role == 'admin') {
             return redirect()->route('admin.dashboard');
         }
 
-        return redirect()->intended(route('home'));
+        return redirect()->intended(route('home'))->with('success', 'Berhasil masuk, selamat datang kembali!');
     }
 
     return back()->withErrors([

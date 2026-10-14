@@ -26,15 +26,19 @@ Route::get('/contact', function () {
 })->name('contact');
 Route::get('/product/{id}', [ShopController::class, 'show'])->name('product.show');
 
-// Rute Autentikasi
+// RUTE AUTENTIKASI MEMBER
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-
-// THROTTLE
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:5,1')
     ->name('login.process');
 
-
+// RUTE AUTENTIKASI ADMIN (BARU)
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AdminController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('login.process');
+});
 
 Route::post('/product/{id}/review', [ReviewController::class, 'store'])->name('product.review')->middleware('auth');
 
@@ -72,11 +76,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/order/{id}/upload-proof', [OrderController::class, 'uploadProof'])->name('order.uploadProof');
     Route::post('/order/{id}/cancel', [OrderController::class, 'cancelOrder'])->name('order.cancel');
 
-    // Logout 
+    // Logout Member
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
-    // RUTE KHUSUS ADMIN
+    // ==========================================
+    // RUTE KHUSUS ADMIN (TERPROTEKSI)
+    // ==========================================
     Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
 
@@ -109,5 +115,8 @@ Route::middleware(['auth'])->group(function () {
         // CMS Pengaturan Web
         Route::get('/settings', [AdminController::class, 'settingsIndex'])->name('settings.index');
         Route::post('/settings', [AdminController::class, 'settingsUpdate'])->name('settings.update');
+
+        // Logout Admin (Menggunakan AdminController@logout yang mengarah ke admin login)
+        Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
     });
 });

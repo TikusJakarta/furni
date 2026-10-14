@@ -1,0 +1,22 @@
+/* Styling Khusus Halaman Admin Login */
+body {
+    background-color: #f1f5f9;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+.admin-card {
+    border: none;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    border-radius: 1rem;
+    overflow: hidden;
+    width: 100%;
+}
+
+.admin-header-bg {
+    background-color: #2f463d !important; /* Warna hijau gelap konsisten */
+}
