@@ -1059,3 +1059,135 @@
     color: var(--ad-green-700);
     white-space: nowrap;
 }
+
+
+/* ==========================================================
+   Pagination (dipakai di bawah tabel dalam .panel)
+   ========================================================== */
+.admin-dash .panel-foot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 22px 26px;
+    border-top: 1px solid var(--ad-line);
+    text-align: center;
+}
+.admin-dash .panel-foot-info { margin: 0; font-size: .85rem; color: var(--ad-muted); }
+
+.admin-dash .pager-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.admin-dash .pager-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--ad-line);
+    border-radius: 10px;
+    background: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--ad-ink);
+    text-decoration: none;
+    font-variant-numeric: tabular-nums;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.admin-dash a.pager-link:hover { background: var(--ad-green-100); border-color: var(--ad-green-700); color: var(--ad-green-700); }
+.admin-dash a.pager-link:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+.admin-dash .pager-link.is-active { background: var(--ad-green-700); border-color: var(--ad-green-700); color: #fff; }
+.admin-dash .pager-link.is-disabled { color: #b4beb9; background: var(--ad-sand-50); cursor: not-allowed; }
+.admin-dash .pager-link.is-gap { border-color: transparent; background: transparent; color: var(--ad-muted); min-width: 24px; padding: 0; }
+
+/* Titik-titik yang bisa diisi angka halaman */
+.admin-dash .pager-jump-form { margin: 0; }
+.admin-dash .pager-jump {
+    width: 44px;
+    height: 36px;
+    padding: 0 4px;
+    border: 1px dashed #aeb9b3;
+    border-radius: 10px;
+    background: #fff;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--ad-ink);
+    -moz-appearance: textfield;
+    transition: width .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.admin-dash .pager-jump::-webkit-outer-spin-button,
+.admin-dash .pager-jump::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.admin-dash .pager-jump::placeholder { color: var(--ad-muted); font-weight: 700; opacity: 1; }
+.admin-dash .pager-jump:hover { border-color: var(--ad-green-700); }
+.admin-dash .pager-jump:focus {
+    outline: none;
+    width: 72px;
+    border-style: solid;
+    border-color: var(--ad-green-700);
+    box-shadow: 0 0 0 3px rgba(59, 93, 80, .18);
+}
+
+@media (max-width: 575.98px) {
+    .admin-dash .panel-foot { padding: 18px; }
+}
+
+
+/* ==========================================================
+   Submenu sidebar (<details>, tanpa JavaScript)
+   ========================================================== */
+.admin-dash .sidebar-group summary { list-style: none; }
+.admin-dash .sidebar-group summary::-webkit-details-marker { display: none; }
+
+.admin-dash .sidebar-caret {
+    margin-left: auto;
+    width: auto !important;
+    font-size: .7rem !important;
+    transition: transform .2s ease;
+}
+.admin-dash .sidebar-group[open] > summary .sidebar-caret { transform: rotate(180deg); }
+
+/* Induk yang salah satu anaknya sedang aktif */
+.admin-dash .sidebar-link.is-parent-active { background: var(--ad-green-700); color: #fff; }
+.admin-dash .sidebar-link.is-parent-active:hover { background: var(--ad-green-700); color: #fff; }
+
+.admin-dash .sidebar-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 4px 0 6px 21px;
+    padding: 0 0 0 12px;
+    list-style: none;
+    border-left: 2px solid var(--ad-line);
+}
+.admin-dash .sidebar-sublink {
+    display: block;
+    padding: 8px 12px;
+    border-radius: 9px;
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash .sidebar-sublink:hover { background: var(--ad-green-100); color: var(--ad-green-700); }
+.admin-dash .sidebar-sublink.is-active { background: var(--ad-green-100); color: var(--ad-green-700); }
+.admin-dash .sidebar-sublink:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+
+/* Versi rata untuk layar kecil: disembunyikan di desktop */
+.admin-dash .sidebar-menu--flat { display: none; }
+
+@media (max-width: 991.98px) {
+    .admin-dash .admin-sidebar nav .sidebar-menu--tree { display: none; }
+    .admin-dash .admin-sidebar nav .sidebar-menu--flat { display: flex; }
+}

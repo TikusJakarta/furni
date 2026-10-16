@@ -77,28 +77,24 @@ class AdminController extends Controller
     }
 
     // Dashboard Utama Admin
-    public function index()
+        public function index()
     {
         $settings = Setting::pluck('value', 'key')->all();
 
-        // Status pesanan yang sudah dibayar. Setelah "paid", pesanan berlanjut ke
-        // packing -> shipping -> shipped -> completed; semuanya tetap uang masuk.
         $paidStatuses = ['paid', 'packing', 'shipping', 'shipped', 'completed'];
 
-        $totalOrders = Order::count();
+        $totalOrders   = Order::count();
         $totalProducts = Product::count();
-        $totalRevenue = Order::whereIn('status', $paidStatuses)->sum('total_price');
-        $recentOrders = Order::with('user')->latest()->take(5)->get();
-
-        // ---------- DATA TAMBAHAN UNTUK DASHBOARD ----------
+        $totalRevenue  = Order::whereIn('status', $paidStatuses)->sum('total_price');
+        $recentOrders  = Order::with('user')->latest()->take(5)->get();
 
         // Pelanggan (semua user selain admin; role kosong dihitung sebagai pelanggan)
-        $customers = fn() => User::where(function ($q) {
+        $customers = fn () => User::where(function ($q) {
             $q->where('role', '!=', 'admin')->orWhereNull('role');
         });
 
         $totalCustomers = $customers()->count();
-        $newCustomers = $customers()->latest()->take(5)->get();
+        $newCustomers   = $customers()->latest()->take(5)->get();
 
         // Pendapatan bulan ini vs bulan lalu
         $revenueThisMonth = Order::whereIn('status', $paidStatuses)
@@ -122,7 +118,7 @@ class AdminController extends Controller
 
             return [
                 'label' => $date->translatedFormat('D'),
-                'date' => $date->translatedFormat('d M'),
+                'date'  => $date->translatedFormat('d M'),
                 'total' => (int) ($salesByDay[$date->toDateString()] ?? 0),
             ];
         })->values();
@@ -135,14 +131,15 @@ class AdminController extends Controller
 
         // Perlu tindakan
         $pendingVerification = $statusCounts['verifikasi'] ?? 0;
-        $pendingReturns = \App\Models\OrderReturn::where('status', 'pending')->count();
-        $lowStockCount = Product::where('stock', '<=', 5)->count();
-        $lowStockProducts = Product::where('stock', '<=', 5)->orderBy('stock')->take(5)->get();
+        $pendingReturns      = \App\Models\OrderReturn::where('status', 'pending')->count();
+        $lowStockCount       = Product::where('stock', '<=', 5)->count();
+        $lowStockProducts    = Product::where('stock', '<=', 5)->orderBy('stock')->take(5)->get();
 
-        // Produk terlaris
-        $orderTable = (new Order)->getTable();
+        // Produk terlaris (jumlah terjual dari item pesanan yang sudah dibayar).
+        // Nama tabel item diambil dari relasi Order::items(), jadi tidak perlu ditebak.
+        $orderTable   = (new Order)->getTable();
         $productTable = (new Product)->getTable();
-        $itemTable = (new Order)->items()->getRelated()->getTable();
+        $itemTable    = (new Order)->items()->getRelated()->getTable();
 
         $topProducts = DB::table($itemTable)
             ->join($orderTable, "$orderTable.id", '=', "$itemTable.order_id")
@@ -155,33 +152,25 @@ class AdminController extends Controller
             ->get();
 
         return view('admin.dashboard', compact(
-            'settings',
-            'totalOrders',
-            'totalProducts',
-            'totalRevenue',
-            'recentOrders',
-            'totalCustomers',
-            'newCustomers',
-            'revenueThisMonth',
-            'revenueLastMonth',
-            'salesChart',
-            'statusCounts',
-            'pendingVerification',
-            'pendingReturns',
-            'lowStockCount',
-            'lowStockProducts',
+            'settings', 'totalOrders', 'totalProducts', 'totalRevenue', 'recentOrders',
+            'totalCustomers', 'newCustomers',
+            'revenueThisMonth', 'revenueLastMonth',
+            'salesChart', 'statusCounts',
+            'pendingVerification', 'pendingReturns', 'lowStockCount', 'lowStockProducts',
             'topProducts'
         ));
-
     }
+
 
     // --- 1. CRUD PRODUK ---
-    public function productsIndex()
+         public function productsIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
-        $products = Product::latest()->get();
+        $products = Product::latest()->paginate(5)->onEachSide(1);
+
         return view('admin.products.index', compact('settings', 'products'));
     }
+
 
     public function productsCreate()
     {
@@ -382,12 +371,20 @@ class AdminController extends Controller
     }
 
     // --- 5. MANAJEMEN PENGGUNA (USER) ---
-    public function usersIndex()
+       public function usersIndex(Request $request)
     {
         $settings = Setting::pluck('value', 'key')->all();
-        $users = User::where('id', '!=', auth()->id())->latest()->get();
+ 
+        $users = User::where('id', '!=', auth()->id())
+            ->when(in_array($request->status, ['active', 'suspended', 'banned']), function ($query) use ($request) {
+                $query->where('status', $request->status);
+            })
+            ->latest()
+            ->get();
+ 
         return view('admin.users.index', compact('settings', 'users'));
     }
+
 
     public function usersUpdateStatus(Request $request, $id)
     {

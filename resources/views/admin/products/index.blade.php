@@ -80,5 +80,14 @@
                 </tbody>
             </table>
         </div>
+
+        @if($products->total() > 0)
+            <div class="panel-foot">
+                {{ $products->links('admin.partials.pagination') }}
+                <p class="panel-foot-info">
+                    Menampilkan {{ $products->firstItem() }}&ndash;{{ $products->lastItem() }} dari {{ $products->total() }} produk
+                </p>
+            </div>
+        @endif
     </div>
 @endsection

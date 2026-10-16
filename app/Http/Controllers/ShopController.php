@@ -9,17 +9,17 @@ use App\Models\Product;
 class ShopController extends Controller
 {
     public function index(Request $request)
-    {
-        $settings = Setting::pluck('value', 'key')->all();
-        $search = $request->input('search');
+{
+    $settings = Setting::pluck('value', 'key')->all();
+    $search = $request->input('search');
 
-        $products = Product::with('variants')->when($search, function ($query, $search) {
-            return $query->where('name', 'like', '%' . $search . '%')
-                ->orWhere('description', 'like', '%' . $search . '%');
-        })->latest()->get();
+    $products = Product::with('variants')->when($search, function ($query, $search) {
+        return $query->where('name', 'like', '%' . $search . '%')
+            ->orWhere('description', 'like', '%' . $search . '%');
+    })->latest()->paginate(3)->withQueryString();
 
-        return view('shop', compact('settings', 'products', 'search'));
-    }
+    return view('shop', compact('settings', 'products', 'search'));
+}
 
     public function show($id)
     {

@@ -64,7 +64,7 @@
                         <tr>
                             <td colspan="5" class="empty-state">
                                 <i class="fa fa-users"></i>
-                                Belum ada pelanggan terdaftar.
+                                {{ request('status') ? 'Tidak ada pengguna dengan status ini.' : 'Belum ada pelanggan terdaftar.' }}
                             </td>
                         </tr>
                     @endforelse

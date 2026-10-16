@@ -55,7 +55,7 @@
             </div>
 
             <div class="row">
-                @foreach($products as $product)
+                @forelse($products as $product)
                     <div class="col-12 col-md-4 col-lg-3 mb-5">
                         <div class="product-item {{ $product->effective_stock <= 0 ? 'opacity-75' : '' }}">
 
@@ -95,8 +95,81 @@
 
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <div class="col-12 text-center py-5">
+                        <p class="text-muted">Tidak ada produk yang ditemukan.</p>
+                    </div>
+                @endforelse
             </div>
+
+            {{-- BAGIAN PAGINASI & TEKS INFORMASI PRODUK --}}
+            @if($products->total() > 0)
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        
+                        <p class="text-muted small mb-3 fw-medium">
+                            Menampilkan {{ $products->firstItem() }}–{{ $products->lastItem() }} dari {{ $products->total() }} produk
+                        </p>
+
+                        @if($products->hasPages())
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center mb-0 align-items-center">
+                                    
+                                    {{-- Previous --}}
+                                    @if ($products->onFirstPage())
+                                        <li class="page-item disabled">
+                                            <span class="page-link rounded-3 border text-muted px-3 py-2 mx-1" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                                <i class="fa fa-chevron-left" style="font-size: 11px;"></i>
+                                            </span>
+                                        </li>
+                                    @else
+                                        <li class="page-item">
+                                            <a class="page-link rounded-3 border text-dark px-3 py-2 mx-1 shadow-sm" href="{{ $products->previousPageUrl() }}" style="border-color: #e2e8f0 !important; background-color: #fff;">
+                                                <i class="fa fa-chevron-left" style="font-size: 11px;"></i>
+                                            </a>
+                                        </li>
+                                    @endif
+
+                                    {{-- Nomor Halaman --}}
+                                    @foreach ($products->getUrlRange(1, $products->lastPage()) as $page => $url)
+                                        @if ($page == $products->currentPage())
+                                            <li class="page-item active">
+                                                <span class="page-link rounded-3 border px-3 py-2 mx-1 fw-bold text-white shadow-sm" style="background-color: #2f463d; border-color: #2f463d !important;">
+                                                    {{ $page }}
+                                                </span>
+                                            </li>
+                                        @else
+                                            <li class="page-item">
+                                                <a class="page-link rounded-3 border text-dark px-3 py-2 mx-1 shadow-sm" href="{{ $url }}" style="border-color: #e2e8f0 !important; background-color: #fff;">
+                                                    {{ $page }}
+                                                </a>
+                                            </li>
+                                        @endif
+                                    @endforeach
+
+                                    {{-- Next --}}
+                                    @if ($products->hasMorePages())
+                                        <li class="page-item">
+                                            <a class="page-link rounded-3 border text-dark px-3 py-2 mx-1 shadow-sm" href="{{ $products->nextPageUrl() }}" style="border-color: #e2e8f0 !important; background-color: #fff;">
+                                                <i class="fa fa-chevron-right" style="font-size: 11px;"></i>
+                                            </a>
+                                        </li>
+                                    @else
+                                        <li class="page-item disabled">
+                                            <span class="page-link rounded-3 border text-muted px-3 py-2 mx-1" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
+                                                <i class="fa fa-chevron-right" style="font-size: 11px;"></i>
+                                            </span>
+                                        </li>
+                                    @endif
+
+                                </ul>
+                            </nav>
+                        @endif
+
+                    </div>
+                </div>
+            @endif
+
         </div>
     </div>
 
