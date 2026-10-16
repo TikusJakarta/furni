@@ -44,7 +44,7 @@
 | --- | --- |
 | Backend | Laravel (PHP) |
 | Database | MySQL + Eloquent ORM |
-| Frontend | Blade Templating, _(fill in: Tailwind CSS / Bootstrap / plain CSS)_ |
+| Frontend | Blade Templating, _(fill in: Bootstrap / plain CSS)_ |
 | Testing | PHPUnit |
 
 ---
