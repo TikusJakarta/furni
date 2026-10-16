@@ -3,7 +3,6 @@
 ![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 
 **Furni** is a furniture-focused marketplace web platform built with **Laravel** and **MySQL**. It was developed as a portfolio project during my vocational internship (PKL).
 
@@ -45,7 +44,7 @@
 | --- | --- |
 | Backend | Laravel (PHP) |
 | Database | MySQL + Eloquent ORM |
-| Frontend | Blade Templating, Vite, _(fill in: Tailwind CSS / Bootstrap)_ |
+| Frontend | Blade Templating, _(fill in: Tailwind CSS / Bootstrap / plain CSS)_ |
 | Testing | PHPUnit |
 
 ---
@@ -68,7 +67,6 @@
 ### Prerequisites
 - PHP >= 8.2 _(adjust based on `composer.json`)_
 - Composer
-- Node.js & npm
 - MySQL
 
 ### Installation
@@ -81,13 +79,10 @@ cd furni
 # 2. Install PHP dependencies
 composer install
 
-# 3. Install frontend dependencies
-npm install
-
-# 4. Copy the environment file
+# 3. Copy the environment file
 cp .env.example .env
 
-# 5. Generate the application key
+# 4. Generate the application key
 php artisan key:generate
 ```
 
@@ -105,13 +100,10 @@ DB_PASSWORD=
 Create a `furni` database in MySQL, then continue:
 
 ```bash
-# 6. Run migrations (add --seed if you have seeders)
+# 5. Run migrations (add --seed if you have seeders)
 php artisan migrate
 
-# 7. Start Vite (first terminal)
-npm run dev
-
-# 8. Start the Laravel server (second terminal)
+# 6. Start the Laravel server
 php artisan serve
 ```
 
@@ -145,7 +137,7 @@ furni/
 ├── config/
 ├── database/     # Migrations, seeders, factories
 ├── public/       # Entry point & public assets
-├── resources/    # Views (Blade), CSS, JS
+├── resources/    # Views (Blade)
 ├── routes/       # Route definitions
 ├── storage/
 └── tests/
