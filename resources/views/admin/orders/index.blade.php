@@ -112,5 +112,14 @@
                 </tbody>
             </table>
         </div>
+
+        @if($orders->total() > 0)
+            <div class="panel-foot">
+                {{ $orders->links('admin.partials.pagination') }}
+                <p class="panel-foot-info">
+                    Menampilkan {{ $orders->firstItem() }}&ndash;{{ $orders->lastItem() }} dari {{ $orders->total() }} pesanan
+                </p>
+            </div>
+        @endif
     </div>
 @endsection

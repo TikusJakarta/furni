@@ -26,31 +26,41 @@
 }
 
 /* ---------- Layout: sidebar kiri + konten ---------- */
-.admin-dash { background: var(--ad-sand-50); min-height: 100vh; }
-
-.admin-dash .admin-shell {
-    display: grid;
-    grid-template-columns: 248px minmax(0, 1fr);
-    gap: 28px;
-    align-items: start;
-    max-width: 1440px;
-    margin: 0 auto;
-    padding: 24px 24px 48px;
+.admin-dash {
+    --sb-w: 260px;
+    background: var(--ad-sand-50);
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden; /* halaman tidak ter-scroll; yang ter-scroll hanya .admin-main */
 }
-.admin-dash .admin-main { min-width: 0; padding-top: 6px; }
+
+.admin-dash .admin-shell { display: block; height: 100%; }
+.admin-dash .admin-main {
+    min-width: 0;
+    height: 100%;
+    margin-left: var(--sb-w);
+    padding: 28px 32px 56px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
 
 /* ---------- Sidebar ---------- */
+/* Dikunci ke layar: tidak ikut ter-scroll. Kalau menunya lebih tinggi dari layar,
+   hanya sidebar yang bisa di-scroll sendiri. */
 .admin-dash .admin-sidebar {
-    position: sticky;
-    top: 24px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    width: var(--sb-w);
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background: #fff;
-    border: 1px solid var(--ad-line);
-    border-radius: 18px;
-    padding: 14px;
-    box-shadow: 0 10px 30px -18px rgba(31, 58, 48, .35);
+    border-right: 1px solid var(--ad-line);
+    padding: 18px 14px 14px;
 }
 .admin-dash .sidebar-brand {
     display: block;
@@ -853,10 +863,15 @@
    Responsif sidebar: di bawah 992px jadi bar atas + strip menu
    ========================================================== */
 @media (max-width: 991.98px) {
-    .admin-dash .admin-shell { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px 16px 40px; }
+    .admin-dash { height: auto; overflow: visible; }
+    .admin-dash .admin-shell { height: auto; grid-template-columns: minmax(0, 1fr); }
     .admin-dash .admin-sidebar {
         position: static;
-        min-height: 0;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        border-right: 0;
+        border-bottom: 1px solid var(--ad-line);
         flex-direction: row;
         flex-wrap: wrap;
         align-items: center;
@@ -875,7 +890,7 @@
         scrollbar-width: none;
     }
     .admin-dash .admin-sidebar nav .sidebar-menu::-webkit-scrollbar { display: none; }
-    .admin-dash .admin-main { padding-top: 0; }
+    .admin-dash .admin-main { height: auto; overflow: visible; margin-left: 0; padding: 16px 16px 40px; }
 }
 
 
@@ -1143,25 +1158,68 @@
 
 
 /* ==========================================================
-   Submenu sidebar (<details>, tanpa JavaScript)
+   Submenu (induk = tautan + tombol panah) & sidebar yang bisa diciutkan
    ========================================================== */
-.admin-dash .sidebar-group summary { list-style: none; }
-.admin-dash .sidebar-group summary::-webkit-details-marker { display: none; }
+.admin-dash .sidebar-link { position: relative; }
 
-.admin-dash .sidebar-caret {
-    margin-left: auto;
-    width: auto !important;
-    font-size: .7rem !important;
-    transition: transform .2s ease;
-}
-.admin-dash .sidebar-group[open] > summary .sidebar-caret { transform: rotate(180deg); }
-
-/* Induk yang salah satu anaknya sedang aktif */
-.admin-dash .sidebar-link.is-parent-active { background: var(--ad-green-700); color: #fff; }
-.admin-dash .sidebar-link.is-parent-active:hover { background: var(--ad-green-700); color: #fff; }
-
-.admin-dash .sidebar-sub {
+/* Kepala sidebar: logo + tombol ciutkan */
+.admin-dash .sidebar-head {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 14px;
+}
+.admin-dash .sidebar-head .sidebar-brand { padding: 8px 12px; }
+.admin-dash .sidebar-collapse {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ad-muted);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash .sidebar-collapse:hover { background: var(--ad-green-100); color: var(--ad-green-700); }
+.admin-dash .sidebar-collapse:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+.admin-dash .sidebar-collapse i { font-size: .85rem; transition: transform .2s ease; }
+
+/* Induk submenu: tautan (ke halaman pertama) + tombol panah (buka/tutup) */
+.admin-dash .sidebar-parent { position: relative; }
+.admin-dash .sidebar-parent .sidebar-link { padding-right: 46px; }
+.admin-dash .sidebar-toggle {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ad-muted);
+    cursor: pointer;
+    transition: background-color .15s ease;
+}
+.admin-dash .sidebar-toggle:hover { background: rgba(31, 58, 48, .08); }
+.admin-dash .sidebar-toggle:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 1px; }
+.admin-dash .sidebar-toggle i { font-size: .7rem; transition: transform .2s ease; }
+.admin-dash .sidebar-group.is-open .sidebar-toggle i { transform: rotate(180deg); }
+
+.admin-dash .sidebar-link.is-parent-active,
+.admin-dash .sidebar-link.is-parent-active:hover { background: var(--ad-green-700); color: #fff; }
+.admin-dash .sidebar-link.is-parent-active + .sidebar-toggle { color: #fff; }
+.admin-dash .sidebar-link.is-parent-active + .sidebar-toggle:hover { background: rgba(255, 255, 255, .2); }
+
+/* Daftar submenu */
+.admin-dash .sidebar-sub {
+    display: none;
     flex-direction: column;
     gap: 2px;
     margin: 4px 0 6px 21px;
@@ -1169,6 +1227,8 @@
     list-style: none;
     border-left: 2px solid var(--ad-line);
 }
+.admin-dash .sidebar-group.is-open > .sidebar-sub { display: flex; }
+.admin-dash .sidebar-sub-title { display: none; }
 .admin-dash .sidebar-sublink {
     display: block;
     padding: 8px 12px;
@@ -1180,7 +1240,7 @@
     white-space: nowrap;
     transition: background-color .15s ease, color .15s ease;
 }
-.admin-dash .sidebar-sublink:hover { background: var(--ad-green-100); color: var(--ad-green-700); }
+.admin-dash .sidebar-sublink:hover,
 .admin-dash .sidebar-sublink.is-active { background: var(--ad-green-100); color: var(--ad-green-700); }
 .admin-dash .sidebar-sublink:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
 
@@ -1190,4 +1250,189 @@
 @media (max-width: 991.98px) {
     .admin-dash .admin-sidebar nav .sidebar-menu--tree { display: none; }
     .admin-dash .admin-sidebar nav .sidebar-menu--flat { display: flex; }
+    .admin-dash .sidebar-collapse { display: none; }
+    .admin-dash .sidebar-head { order: 1; flex: 1; padding: 0; }
+    .admin-dash .sidebar-head .sidebar-brand { padding: 4px 8px; font-size: 1.3rem; }
 }
+
+/* ==========================================================
+   Sidebar diciutkan (hanya desktop): tinggal ikon, submenu muncul
+   sebagai kotak melayang saat kursor diarahkan
+   ========================================================== */
+@media (min-width: 992px) {
+    .admin-dash .admin-sidebar { transition: width .2s ease; }
+    .admin-dash .admin-main { transition: margin-left .2s ease; }
+
+    html.sb-collapsed .admin-dash { --sb-w: 76px; }
+    html.sb-collapsed .admin-dash .admin-sidebar { overflow: visible; padding-left: 10px; padding-right: 10px; }
+
+    html.sb-collapsed .admin-dash .sidebar-head { justify-content: center; }
+    html.sb-collapsed .admin-dash .sidebar-head .sidebar-brand,
+    html.sb-collapsed .admin-dash .sidebar-label,
+    html.sb-collapsed .admin-dash .sidebar-text,
+    html.sb-collapsed .admin-dash .sidebar-toggle,
+    html.sb-collapsed .admin-dash .sidebar-user .who { display: none; }
+    html.sb-collapsed .admin-dash .sidebar-collapse i { transform: rotate(180deg); }
+
+    html.sb-collapsed .admin-dash .sidebar-link { justify-content: center; padding: 12px 0; }
+    html.sb-collapsed .admin-dash .sidebar-user { justify-content: center; padding-left: 0; padding-right: 0; }
+
+    /* Label muncul sebagai tooltip */
+    html.sb-collapsed .admin-dash .sidebar-link[data-tip]:hover::after,
+    html.sb-collapsed .admin-dash .sidebar-link[data-tip]:focus-visible::after {
+        content: attr(data-tip);
+        position: absolute;
+        left: calc(100% + 12px);
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: var(--ad-green-900);
+        color: #fff;
+        font-size: .8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 300;
+    }
+
+    /* Submenu jadi kotak melayang di sebelah kanan ikon induk */
+    html.sb-collapsed .admin-dash .sidebar-group { position: relative; }
+    html.sb-collapsed .admin-dash .sidebar-group .sidebar-sub,
+    html.sb-collapsed .admin-dash .sidebar-group.is-open > .sidebar-sub {
+        display: none;
+        position: absolute;
+        left: calc(100% + 10px);
+        top: 0;
+        min-width: 210px;
+        margin: 0;
+        padding: 8px;
+        border: 1px solid var(--ad-line);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 14px 34px -14px rgba(31, 58, 48, .4);
+        z-index: 200;
+    }
+    /* jembatan tak terlihat agar kotak tidak menutup saat kursor menyeberangi celah */
+    html.sb-collapsed .admin-dash .sidebar-sub::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -12px;
+        width: 12px;
+    }
+    html.sb-collapsed .admin-dash .sidebar-group:hover > .sidebar-sub,
+    html.sb-collapsed .admin-dash .sidebar-group:focus-within > .sidebar-sub { display: flex; }
+
+    html.sb-collapsed .admin-dash .sidebar-sub-title {
+        display: block;
+        padding: 6px 12px 8px;
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ad-muted);
+    }
+}
+
+
+/* ==========================================================
+   Halaman Pengaturan: kartu-kartu dalam grid + bar simpan
+   ========================================================== */
+.admin-dash .form-card--compact { padding: 24px; }
+.admin-dash .form-card--compact .form-card-head { margin-bottom: 20px; padding-bottom: 14px; }
+.admin-dash .form-card--compact .ad-field:last-child { margin-bottom: 0; }
+
+/* Bar simpan: menempel di dasar area konten saat halaman panjang di-scroll */
+.admin-dash .savebar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px -32px -56px;
+    padding: 14px 32px;
+    background: rgba(246, 247, 245, .94);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--ad-line);
+}
+.admin-dash .savebar p { margin: 0; font-size: .85rem; color: var(--ad-muted); }
+.admin-dash .savebar .btn-submit { flex: none; padding: 11px 28px; }
+
+@media (max-width: 991.98px) {
+    .admin-dash .savebar { position: static; margin: 20px 0 0; padding: 14px 0 0; background: transparent; }
+}
+
+
+/* ==========================================================
+   Form create/edit: dua kolom, pratinjau gambar & kupon
+   ========================================================== */
+.admin-dash .form-wide { max-width: 1400px; }
+
+.admin-dash .savebar-actions { display: flex; align-items: center; gap: 10px; }
+.admin-dash .savebar .btn-cancel { padding: 11px 22px; }
+
+/* Pratinjau gambar produk */
+.admin-dash .img-preview {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 20px;
+    overflow: hidden;
+    border: 1.5px dashed #cfd8d3;
+    border-radius: 16px;
+    background: var(--ad-sand-50);
+}
+.admin-dash .img-preview img { display: none; width: 100%; height: 100%; object-fit: cover; }
+.admin-dash .img-preview.has-image { border-style: solid; border-color: var(--ad-line); }
+.admin-dash .img-preview.has-image img { display: block; }
+.admin-dash .img-preview.has-image .img-empty { display: none; }
+.admin-dash .img-empty { text-align: center; font-size: .85rem; color: var(--ad-muted); }
+.admin-dash .img-empty i { display: block; margin-bottom: 8px; font-size: 2rem; opacity: .5; }
+
+/* Pratinjau kupon (tiket) */
+.admin-dash .coupon-ticket {
+    display: flex;
+    overflow: hidden;
+    border: 1.5px dashed var(--ad-green-700);
+    border-radius: 16px;
+    background: #fff;
+}
+.admin-dash .coupon-ticket-main { flex: 1; min-width: 0; padding: 22px 24px; background: var(--ad-green-100); }
+.admin-dash .coupon-ticket-label { font-size: .7rem; font-weight: 700; letter-spacing: .1em; color: var(--ad-green-700); }
+.admin-dash .coupon-ticket-code {
+    display: block;
+    margin: 6px 0 8px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    color: var(--ad-green-900);
+    overflow-wrap: anywhere;
+}
+.admin-dash .coupon-ticket-sub { font-size: .82rem; color: var(--ad-muted); }
+.admin-dash .coupon-ticket-side {
+    flex: none;
+    min-width: 132px;
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: var(--ad-green-700);
+    color: #fff;
+}
+.admin-dash .coupon-ticket-side strong { font-size: 1.5rem; font-weight: 800; line-height: 1.1; overflow-wrap: anywhere; }
+.admin-dash .coupon-ticket-side span { margin-top: 4px; font-size: .7rem; letter-spacing: .12em; opacity: .8; }
+.admin-dash .coupon-ticket-expiry { margin: 14px 0 0; font-size: .85rem; color: var(--ad-muted); }
+
+.admin-dash .tip-title { margin: 26px 0 10px; font-size: .9rem; font-weight: 700; }
+.admin-dash .tip-list { margin: 0; padding-left: 18px; font-size: .86rem; line-height: 1.75; color: var(--ad-muted); }

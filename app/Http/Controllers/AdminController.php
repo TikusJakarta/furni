@@ -262,12 +262,14 @@ class AdminController extends Controller
     }
 
     // --- 2. MANAJEMEN PESANAN ADMIN ---
-    public function ordersIndex()
+        public function ordersIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
-        $orders = Order::with('user', 'orderItems.product')->latest()->get();
+        $orders = Order::with('user', 'orderItems.product')->latest()->paginate(10)->onEachSide(1);
+ 
         return view('admin.orders.index', compact('settings', 'orders'));
     }
+
 
     public function ordersUpdateStatus(Request $request, $id)
     {
