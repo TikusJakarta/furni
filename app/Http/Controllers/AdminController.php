@@ -39,7 +39,7 @@ class AdminController extends Controller
             $user = auth()->user();
 
             // Pastikan hanya role admin yang bisa masuk
-            if ($user->role !== 'admin') {
+            if ($user->role !== 'admin' && $user->role !== 'super_admin') {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -50,13 +50,13 @@ class AdminController extends Controller
             }
 
             // Cek status banned
-            if ($user->status == 'banned') {
+            if (in_array($user->status, ['suspended', 'banned'])) {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
                 return back()->withErrors([
-                    'email' => 'Akun Administrator Anda telah diblokir.',
+                    'email' => 'Akses ditolak. Akun Administrator Anda sedang ditangguhkan atau diblokir.',
                 ])->withInput();
             }
 
@@ -441,5 +441,46 @@ class AdminController extends Controller
         $return->save();
 
         return redirect()->back()->with('success', 'Status pengajuan retur berhasil diperbarui!');
+    }
+
+    // SUPER ADMIN 
+    public function adminsIndex()
+    {
+        $settings = Setting::pluck('value', 'key')->all();
+        $admins = User::whereIn('role', ['admin', 'super_admin'])->latest()->get();
+        return view('admin.admins.index', compact('settings', 'admins'));
+    }
+
+    public function adminsStore(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'role' => 'required|in:admin,super_admin',
+        ]);
+
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role' => $request->role,
+            'status' => 'active',
+        ]);
+
+        return redirect()->route('admin.admins.index')->with('success', 'Akun admin baru berhasil ditambahkan!');
+    }
+
+    public function adminsDestroy($id)
+    {
+        $admin = User::findOrFail($id);
+        
+        // Mencegah super admin menghapus akunnya sendiri
+        if ($admin->id === auth()->id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
+        }
+
+        $admin->delete();
+        return redirect()->route('admin.admins.index')->with('success', 'Akses admin berhasil dicabut/dihapus!');
     }
 }
