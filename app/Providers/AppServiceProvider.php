@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Route;
 use App\Models\Setting;
 use App\Models\Page;
+use App\Support\ThemeColors;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,7 +27,9 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with([
                 'settings' => $settings,
-                'page' => $page
+                'page' => $page,
+                // Variabel CSS warna navbar/hero/footer dari halaman Pengaturan admin
+                'themeCss' => ThemeColors::css($settings),
             ]);
         });
     }

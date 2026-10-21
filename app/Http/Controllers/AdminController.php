@@ -9,9 +9,10 @@ use App\Models\Setting;
 use App\Models\LimitStock;
 use App\Models\Coupon;
 use App\Models\User;
+use App\Support\ThemeColors;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Auth; // <-- Diperlukan untuk Auth::attempt / Auth::logout
+use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
 {
@@ -21,7 +22,7 @@ class AdminController extends Controller
         if (Auth::check() && Auth::user()->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
-        
+
         $settings = Setting::pluck('value', 'key')->all();
         return view('admin.auth.login', compact('settings'));
     }
@@ -77,24 +78,24 @@ class AdminController extends Controller
     }
 
     // Dashboard Utama Admin
-        public function index()
+    public function index()
     {
         $settings = Setting::pluck('value', 'key')->all();
 
         $paidStatuses = ['paid', 'packing', 'shipping', 'shipped', 'completed'];
 
-        $totalOrders   = Order::count();
+        $totalOrders = Order::count();
         $totalProducts = Product::count();
-        $totalRevenue  = Order::whereIn('status', $paidStatuses)->sum('total_price');
-        $recentOrders  = Order::with('user')->latest()->take(5)->get();
+        $totalRevenue = Order::whereIn('status', $paidStatuses)->sum('total_price');
+        $recentOrders = Order::with('user')->latest()->take(5)->get();
 
         // Pelanggan (semua user selain admin; role kosong dihitung sebagai pelanggan)
-        $customers = fn () => User::where(function ($q) {
+        $customers = fn() => User::where(function ($q) {
             $q->where('role', '!=', 'admin')->orWhereNull('role');
         });
 
         $totalCustomers = $customers()->count();
-        $newCustomers   = $customers()->latest()->take(5)->get();
+        $newCustomers = $customers()->latest()->take(5)->get();
 
         // Pendapatan bulan ini vs bulan lalu
         $revenueThisMonth = Order::whereIn('status', $paidStatuses)
@@ -118,7 +119,7 @@ class AdminController extends Controller
 
             return [
                 'label' => $date->translatedFormat('D'),
-                'date'  => $date->translatedFormat('d M'),
+                'date' => $date->translatedFormat('d M'),
                 'total' => (int) ($salesByDay[$date->toDateString()] ?? 0),
             ];
         })->values();
@@ -131,15 +132,15 @@ class AdminController extends Controller
 
         // Perlu tindakan
         $pendingVerification = $statusCounts['verifikasi'] ?? 0;
-        $pendingReturns      = \App\Models\OrderReturn::where('status', 'pending')->count();
-        $lowStockCount       = Product::where('stock', '<=', 5)->count();
-        $lowStockProducts    = Product::where('stock', '<=', 5)->orderBy('stock')->take(5)->get();
+        $pendingReturns = \App\Models\OrderReturn::where('status', 'pending')->count();
+        $lowStockCount = Product::where('stock', '<=', 5)->count();
+        $lowStockProducts = Product::where('stock', '<=', 5)->orderBy('stock')->take(5)->get();
 
         // Produk terlaris (jumlah terjual dari item pesanan yang sudah dibayar).
         // Nama tabel item diambil dari relasi Order::items(), jadi tidak perlu ditebak.
-        $orderTable   = (new Order)->getTable();
+        $orderTable = (new Order)->getTable();
         $productTable = (new Product)->getTable();
-        $itemTable    = (new Order)->items()->getRelated()->getTable();
+        $itemTable = (new Order)->items()->getRelated()->getTable();
 
         $topProducts = DB::table($itemTable)
             ->join($orderTable, "$orderTable.id", '=', "$itemTable.order_id")
@@ -152,18 +153,28 @@ class AdminController extends Controller
             ->get();
 
         return view('admin.dashboard', compact(
-            'settings', 'totalOrders', 'totalProducts', 'totalRevenue', 'recentOrders',
-            'totalCustomers', 'newCustomers',
-            'revenueThisMonth', 'revenueLastMonth',
-            'salesChart', 'statusCounts',
-            'pendingVerification', 'pendingReturns', 'lowStockCount', 'lowStockProducts',
+            'settings',
+            'totalOrders',
+            'totalProducts',
+            'totalRevenue',
+            'recentOrders',
+            'totalCustomers',
+            'newCustomers',
+            'revenueThisMonth',
+            'revenueLastMonth',
+            'salesChart',
+            'statusCounts',
+            'pendingVerification',
+            'pendingReturns',
+            'lowStockCount',
+            'lowStockProducts',
             'topProducts'
         ));
     }
 
 
     // --- 1. CRUD PRODUK ---
-         public function productsIndex()
+    public function productsIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
         $products = Product::latest()->paginate(5)->onEachSide(1);
@@ -262,11 +273,11 @@ class AdminController extends Controller
     }
 
     // --- 2. MANAJEMEN PESANAN ADMIN ---
-        public function ordersIndex()
+    public function ordersIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
         $orders = Order::with('user', 'orderItems.product')->latest()->paginate(10)->onEachSide(1);
- 
+
         return view('admin.orders.index', compact('settings', 'orders'));
     }
 
@@ -314,11 +325,20 @@ class AdminController extends Controller
     public function settingsIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
-        return view('admin.settings.index', compact('settings'));
+        $themeGroups = ThemeColors::groups();
+
+        return view('admin.settings.index', compact('settings', 'themeGroups'));
     }
+
 
     public function settingsUpdate(Request $request)
     {
+        $request->validate(
+            ThemeColors::rules(),
+            ['regex' => ':attribute harus berupa kode warna 6 digit, contoh #3b5d50.'],
+            ThemeColors::attributes()
+        );
+
         foreach ($request->except('_token') as $key => $value) {
             Setting::updateOrCreate(
                 ['key' => $key],
@@ -328,6 +348,7 @@ class AdminController extends Controller
 
         return redirect()->route('admin.settings.index')->with('success', 'Pengaturan website (CMS) berhasil diperbarui!');
     }
+
 
     // --- 4. MANAJEMEN KUPON / PROMO ---
     public function couponsIndex()
@@ -373,17 +394,17 @@ class AdminController extends Controller
     }
 
     // --- 5. MANAJEMEN PENGGUNA (USER) ---
-       public function usersIndex(Request $request)
+    public function usersIndex(Request $request)
     {
         $settings = Setting::pluck('value', 'key')->all();
- 
+
         $users = User::where('id', '!=', auth()->id())
             ->when(in_array($request->status, ['active', 'suspended', 'banned']), function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
             ->latest()
             ->get();
- 
+
         return view('admin.users.index', compact('settings', 'users'));
     }
 

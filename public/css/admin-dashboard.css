@@ -1346,26 +1346,22 @@
 
 /* Bar simpan: menempel di dasar area konten saat halaman panjang di-scroll */
 .admin-dash .savebar {
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
-    margin: 24px -32px -56px;
-    padding: 14px 32px;
-    background: rgba(246, 247, 245, .94);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    border-top: 1px solid var(--ad-line);
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 14px;
 }
 .admin-dash .savebar p { margin: 0; font-size: .85rem; color: var(--ad-muted); }
 .admin-dash .savebar .btn-submit { flex: none; padding: 11px 28px; }
 
-@media (max-width: 991.98px) {
-    .admin-dash .savebar { position: static; margin: 20px 0 0; padding: 14px 0 0; background: transparent; }
+@media (max-width: 575.98px) {
+    .admin-dash .savebar { padding: 14px; }
 }
 
 
@@ -1436,3 +1432,103 @@
 
 .admin-dash .tip-title { margin: 26px 0 10px; font-size: .9rem; font-weight: 700; }
 .admin-dash .tip-list { margin: 0; padding-left: 18px; font-size: .86rem; line-height: 1.75; color: var(--ad-muted); }
+
+
+/* ==========================================================
+   Pengaturan: warna tampilan website + pratinjau
+   ========================================================== */
+.admin-dash .theme-group-title { margin: 0 0 14px; font-size: .9rem; font-weight: 700; color: var(--ad-green-700); }
+.admin-dash .theme-row { margin-bottom: 16px; }
+.admin-dash .theme-control { display: flex; align-items: center; gap: 8px; }
+
+.admin-dash .theme-picker {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 3px;
+    border: 1px solid var(--ad-line);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+}
+.admin-dash .theme-picker::-webkit-color-swatch-wrapper { padding: 0; }
+.admin-dash .theme-picker::-webkit-color-swatch { border: 0; border-radius: 7px; }
+.admin-dash .theme-picker::-moz-color-swatch { border: 0; border-radius: 7px; }
+.admin-dash .theme-picker:focus-visible,
+.admin-dash .theme-reset:focus-visible,
+.admin-dash .theme-reset-all:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; }
+
+.admin-dash .theme-hex { flex: 1; min-width: 0; text-transform: lowercase; font-variant-numeric: tabular-nums; }
+
+.admin-dash .theme-reset {
+    flex: none;
+    width: 40px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--ad-line);
+    border-radius: 10px;
+    background: #fff;
+    font-size: .8rem;
+    color: var(--ad-muted);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash .theme-reset:hover { background: var(--ad-green-100); color: var(--ad-green-700); }
+
+.admin-dash .theme-hint { color: var(--ad-pending-fg); }
+
+.admin-dash .theme-reset-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 9px 16px;
+    border: 1px solid var(--ad-line);
+    border-radius: 10px;
+    background: #fff;
+    font-family: inherit;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.admin-dash .theme-reset-all:hover { background: var(--ad-green-100); color: var(--ad-green-700); }
+
+/* Pratinjau: memakai nama variabel yang sama dengan website; JS mengisinya */
+.admin-dash .theme-preview-wrap { position: sticky; top: 8px; }
+.admin-dash .theme-preview {
+    overflow: hidden;
+    margin-bottom: 10px;
+    border: 1px solid var(--ad-line);
+    border-radius: 14px;
+    background: #eff2f1;
+    font-size: .78rem;
+    line-height: 1.5;
+}
+.admin-dash .tp-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    background: var(--site-navbar-bg, #3b5d50);
+    color: var(--site-navbar-link, #ffffff);
+}
+.admin-dash .tp-brand { font-size: 1.1rem; font-weight: 700; }
+.admin-dash .tp-brand i { font-style: normal; opacity: .4; }
+.admin-dash .tp-menu span { margin-left: 14px; padding-bottom: 4px; opacity: .5; }
+.admin-dash .tp-menu span.is-active { opacity: 1; border-bottom: 3px solid var(--site-navbar-accent, #f9bf29); }
+
+.admin-dash .tp-hero { padding: 26px 18px; background: var(--site-hero-bg, #3b5d50); color: #fff; }
+.admin-dash .tp-hero strong { font-size: 1.05rem; font-weight: 700; }
+
+.admin-dash .tp-body { display: flex; gap: 10px; padding: 18px; }
+.admin-dash .tp-body span { flex: 1; height: 46px; border-radius: 8px; background: #fff; }
+
+.admin-dash .tp-footer { padding: 18px; background: var(--site-footer-bg, #ffffff); color: var(--site-footer-text, #6a6a6a); }
+.admin-dash .tp-logo { font-size: 1.05rem; font-weight: 700; color: var(--site-footer-accent, #3b5d50); }
+.admin-dash .tp-footer p { margin: 4px 0 10px; }
+.admin-dash .tp-links span { margin-right: 14px; font-weight: 600; color: var(--site-footer-link, #2f2f2f); }
+.admin-dash .tp-social { display: flex; gap: 6px; margin-top: 12px; }
+.admin-dash .tp-social b { width: 22px; height: 22px; border-radius: 50%; background: var(--site-footer-accent, #3b5d50); opacity: .2; }

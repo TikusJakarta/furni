@@ -1,0 +1,52 @@
+/* ==========================================================
+   Warna navbar, hero, dan footer yang bisa diatur dari
+   halaman Pengaturan admin.
+   Simpan di: public/css/site-theme.css
+   Dimuat SETELAH style.css (lihat layout/app.blade.php).
+
+   Nilai setelah koma di setiap var(...) adalah warna bawaan template,
+   jadi kalau admin belum mengubah apa pun tampilannya sama persis.
+   Variabel diisi dari <style> di <head> (dibuat oleh App\Support\ThemeColors).
+   ========================================================== */
+
+/* ---------- Navbar ---------- */
+.custom-navbar { background: var(--site-navbar-bg, #3b5d50) !important; }
+
+.custom-navbar .navbar-brand,
+.custom-navbar .navbar-brand:hover,
+.custom-navbar .navbar-brand:focus { color: var(--site-navbar-link, #ffffff); }
+
+.custom-navbar .custom-navbar-nav li a { color: var(--site-navbar-link, #ffffff) !important; }
+
+/* garis penanda menu aktif / saat disorot */
+.custom-navbar .custom-navbar-nav li a:before { background: var(--site-navbar-accent, #f9bf29); }
+
+/* ikon user, keranjang, dan tombol menu HP (gambar putih) */
+.custom-navbar .custom-navbar-cta img,
+.custom-navbar .navbar-toggler-icon { filter: var(--site-navbar-icon-filter, none); }
+
+/* ---------- Hero ---------- */
+.hero { background: var(--site-hero-bg, #3b5d50); }
+
+/* ---------- Footer ---------- */
+.footer-section {
+    background: var(--site-footer-bg, #ffffff);
+    color: var(--site-footer-text, #6a6a6a);
+}
+
+.footer-section a { color: var(--site-footer-link, #2f2f2f); }
+.footer-section a:hover { color: var(--site-footer-link-hover, rgba(47, 47, 47, 0.5)); }
+
+.footer-section .subscription-form h3,
+.footer-section .footer-logo-wrap .footer-logo { color: var(--site-footer-accent, #3b5d50); }
+
+.footer-section .custom-social li a {
+    background: var(--site-footer-accent-soft, #dce5e4);
+    color: var(--site-footer-accent, #3b5d50);
+}
+.footer-section .custom-social li a:hover {
+    background: var(--site-footer-accent, #3b5d50);
+    color: #ffffff;
+}
+
+.footer-section .border-top { border-color: var(--site-footer-accent-soft, #dce5e4); }

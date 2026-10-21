@@ -2,6 +2,10 @@
 
 @section('title', $settings['shop_page_title'] ?? 'Shop - Furni')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/shop.css') }}?v={{ filemtime(public_path('css/shop.css')) }}">
+@endpush
+
 @section('content')
     <!-- Start Hero Section -->
     <div class="hero">
@@ -19,7 +23,7 @@
     <!-- End Hero Section -->
 
     <div class="untree_co-section product-section before-footer-section">
-        <div class="container">
+        <div class="container shop-wrap">
 
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
@@ -29,34 +33,37 @@
             @endif
 
             <div class="row mb-5">
-                <div class="col-md-6 mx-auto">
-                    <form action="{{ route('shop') }}" method="GET">
+                <div class="col-md-8 col-lg-6 mx-auto">
+                    <form action="{{ route('shop') }}" method="GET" class="shop-search" role="search">
                         <div class="position-relative">
-                            <div class="input-group shadow-sm">
-                                <input type="text" id="search-input" name="search" class="form-control form-control-lg"
+                            <div class="shop-search-box">
+                                <i class="fa fa-search shop-search-icon" aria-hidden="true"></i>
+                                <input type="text" id="search-input" name="search" class="shop-search-input"
                                     placeholder="Cari nama produk furniture..." value="{{ request('search') }}"
-                                    autocomplete="off">
-                                <button class="btn btn-primary text-white px-4" type="submit">
-                                    <i class="fa fa-search me-1"></i> Cari
-                                </button>
+                                    autocomplete="off" aria-label="Cari produk">
+
                                 @if(request('search'))
-                                    <a href="{{ route('shop') }}"
-                                        class="btn btn-outline-secondary d-flex align-items-center">Reset</a>
+                                    <a href="{{ route('shop') }}" class="shop-search-reset" title="Hapus pencarian"
+                                        aria-label="Hapus pencarian">
+                                        <i class="fa fa-times" aria-hidden="true"></i>
+                                    </a>
                                 @endif
+
+                                <button class="shop-search-btn" type="submit">Cari</button>
                             </div>
 
                             <div id="search-suggestions-box"
-                                class="position-absolute start-0 end-0 bg-white border rounded-bottom shadow-lg d-none"
-                                style="top: 100%; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                                class="position-absolute start-0 end-0 bg-white border rounded-bottom shadow-lg d-none">
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <div class="row">
+            {{-- Grid di tengah: 5 produk sebaris di layar lebar, turun otomatis di layar lebih kecil --}}
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5 justify-content-center gy-5 shop-grid">
                 @forelse($products as $product)
-                    <div class="col-12 col-md-4 col-lg-3 mb-5">
+                    <div class="col">
                         <div class="product-item {{ $product->effective_stock <= 0 ? 'opacity-75' : '' }}">
 
                             <!-- Card / Trigger Modal dengan data-variants -->
@@ -104,68 +111,14 @@
 
             {{-- BAGIAN PAGINASI & TEKS INFORMASI PRODUK --}}
             @if($products->total() > 0)
-                <div class="row mt-4">
+                <div class="row mt-5">
                     <div class="col-12 text-center">
-                        
                         <p class="text-muted small mb-3 fw-medium">
                             Menampilkan {{ $products->firstItem() }}–{{ $products->lastItem() }} dari {{ $products->total() }} produk
                         </p>
 
-                        @if($products->hasPages())
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center mb-0 align-items-center">
-                                    
-                                    {{-- Previous --}}
-                                    @if ($products->onFirstPage())
-                                        <li class="page-item disabled">
-                                            <span class="page-link rounded-3 border text-muted px-3 py-2 mx-1" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
-                                                <i class="fa fa-chevron-left" style="font-size: 11px;"></i>
-                                            </span>
-                                        </li>
-                                    @else
-                                        <li class="page-item">
-                                            <a class="page-link rounded-3 border text-dark px-3 py-2 mx-1 shadow-sm" href="{{ $products->previousPageUrl() }}" style="border-color: #e2e8f0 !important; background-color: #fff;">
-                                                <i class="fa fa-chevron-left" style="font-size: 11px;"></i>
-                                            </a>
-                                        </li>
-                                    @endif
-
-                                    {{-- Nomor Halaman --}}
-                                    @foreach ($products->getUrlRange(1, $products->lastPage()) as $page => $url)
-                                        @if ($page == $products->currentPage())
-                                            <li class="page-item active">
-                                                <span class="page-link rounded-3 border px-3 py-2 mx-1 fw-bold text-white shadow-sm" style="background-color: #2f463d; border-color: #2f463d !important;">
-                                                    {{ $page }}
-                                                </span>
-                                            </li>
-                                        @else
-                                            <li class="page-item">
-                                                <a class="page-link rounded-3 border text-dark px-3 py-2 mx-1 shadow-sm" href="{{ $url }}" style="border-color: #e2e8f0 !important; background-color: #fff;">
-                                                    {{ $page }}
-                                                </a>
-                                            </li>
-                                        @endif
-                                    @endforeach
-
-                                    {{-- Next --}}
-                                    @if ($products->hasMorePages())
-                                        <li class="page-item">
-                                            <a class="page-link rounded-3 border text-dark px-3 py-2 mx-1 shadow-sm" href="{{ $products->nextPageUrl() }}" style="border-color: #e2e8f0 !important; background-color: #fff;">
-                                                <i class="fa fa-chevron-right" style="font-size: 11px;"></i>
-                                            </a>
-                                        </li>
-                                    @else
-                                        <li class="page-item disabled">
-                                            <span class="page-link rounded-3 border text-muted px-3 py-2 mx-1" style="background-color: #f8fafc; border-color: #e2e8f0 !important;">
-                                                <i class="fa fa-chevron-right" style="font-size: 11px;"></i>
-                                            </span>
-                                        </li>
-                                    @endif
-
-                                </ul>
-                            </nav>
-                        @endif
-
+                        {{-- Tampilan tombol halaman ada di partials/shop-pagination.blade.php --}}
+                        {{ $products->onEachSide(1)->appends(request()->except('page'))->links('partials.shop-pagination') }}
                     </div>
                 </div>
             @endif

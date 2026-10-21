@@ -15,6 +15,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="{{ asset('css/tiny-slider.css') }}" rel="stylesheet">
     <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+    {{-- Warna navbar, hero, footer (diatur admin di halaman Pengaturan). Harus setelah style.css --}}
+    <link href="{{ asset('css/site-theme.css') }}?v={{ filemtime(public_path('css/site-theme.css')) }}" rel="stylesheet">
+    @if(!empty($themeCss))
+        <style>{!! $themeCss !!}</style>
+    @endif
     
 
     <title>

@@ -16,7 +16,7 @@ class ShopController extends Controller
     $products = Product::with('variants')->when($search, function ($query, $search) {
         return $query->where('name', 'like', '%' . $search . '%')
             ->orWhere('description', 'like', '%' . $search . '%');
-    })->latest()->paginate(3)->withQueryString();
+    })->latest()->paginate(5)->withQueryString();
 
     return view('shop', compact('settings', 'products', 'search'));
 }
