@@ -8,6 +8,19 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Setting;
 use App\Models\Page;
 use App\Support\ThemeColors;
+use App\Models\ActivityLog;
+use App\Models\Coupon;
+use App\Models\Order;
+use App\Models\OrderReturn;
+use App\Models\Product;
+use App\Models\User;
+use App\Observers\AuditObserver;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Support\Facades\Event;
+
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,5 +45,33 @@ class AppServiceProvider extends ServiceProvider
                 'themeCss' => ThemeColors::css($settings),
             ]);
         });
+
+        foreach ([Product::class, Coupon::class, Order::class, User::class, Setting::class, OrderReturn::class] as $model) {
+            $model::observe(AuditObserver::class);
+        }
+ 
+        Event::listen(Login::class, function ($event) {
+            // Akun yang diblokir langsung dikeluarkan lagi oleh login admin: jangan dicatat sebagai login
+            if (($event->user->status ?? null) === 'banned') {
+                return;
+            }
+ 
+            ActivityLog::record('login', 'Login ke sistem', [], $event->user);
+        });
+ 
+        Event::listen(Logout::class, function ($event) {
+            ActivityLog::record('logout', 'Keluar dari sistem', [], $event->user);
+        });
+ 
+        Event::listen(Failed::class, function ($event) {
+            $user = $event->user ?? User::where('email', $event->credentials['email'] ?? '')->first();
+ 
+            if ($user) {
+                ActivityLog::record('login_failed', 'Percobaan login gagal (kata sandi salah)', [
+                    'properties' => ['email' => $user->email],
+                ], $user);
+            }
+        });
+
     }
 }

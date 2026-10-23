@@ -10,10 +10,13 @@ class SuperAdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && auth()->user()->role === 'super_admin') {
-            return $next($request);
+        $user = $request->user();
+
+        if (!$user || $user->role !== 'super_admin') {
+            abort(403, 'Hanya Super Admin yang dapat mengakses halaman ini.');
         }
 
-        return redirect()->route('admin.dashboard')->with('error', 'Akses ditolak! Halaman ini khusus Super Admin.');
+        return $next($request);
     }
+
 }

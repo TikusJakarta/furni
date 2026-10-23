@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\LimitStock;
 use App\Models\Coupon;
 use App\Models\User;
+use App\Models\ActivityLog;
 use App\Support\ThemeColors;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -19,8 +20,8 @@ class AdminController extends Controller
     // --- AUTENTIKASI ADMIN ---
     public function showLoginForm()
     {
-        if (Auth::check() && Auth::user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
+        if (Auth::check() && in_array(Auth::user()->role, ['admin', 'super_admin'])) {
+            return redirect()->route(Auth::user()->role === 'super_admin' ? 'admin.admins.index' : 'admin.dashboard');
         }
 
         $settings = Setting::pluck('value', 'key')->all();
@@ -60,6 +61,10 @@ class AdminController extends Controller
                 ])->withInput();
             }
 
+            if ($user->role === 'super_admin') {
+                return redirect()->route('admin.admins.index');
+            }
+
             return redirect()->intended(route('admin.dashboard'));
         }
 
@@ -91,8 +96,9 @@ class AdminController extends Controller
 
         // Pelanggan (semua user selain admin; role kosong dihitung sebagai pelanggan)
         $customers = fn() => User::where(function ($q) {
-            $q->where('role', '!=', 'admin')->orWhereNull('role');
+            $q->whereNotIn('role', ['admin', 'super_admin'])->orWhereNull('role');
         });
+
 
         $totalCustomers = $customers()->count();
         $newCustomers = $customers()->latest()->take(5)->get();
@@ -398,7 +404,9 @@ class AdminController extends Controller
     {
         $settings = Setting::pluck('value', 'key')->all();
 
-        $users = User::where('id', '!=', auth()->id())
+        $users = User::where(function ($query) {
+            $query->whereNotIn('role', ['admin', 'super_admin'])->orWhereNull('role');
+        })
             ->when(in_array($request->status, ['active', 'suspended', 'banned']), function ($query) use ($request) {
                 $query->where('status', $request->status);
             })
@@ -409,6 +417,7 @@ class AdminController extends Controller
     }
 
 
+
     public function usersUpdateStatus(Request $request, $id)
     {
         $request->validate([
@@ -416,11 +425,21 @@ class AdminController extends Controller
         ]);
 
         $user = User::findOrFail($id);
+
+        if ((int) $user->id === (int) auth()->id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat mengubah status akun Anda sendiri.');
+        }
+
+        if (!$this->isSuperAdmin() && in_array($user->role, ['admin', 'super_admin'])) {
+            return redirect()->back()->with('error', 'Hanya Super Admin yang dapat mengubah status akun administrator.');
+        }
+
         $user->status = $request->status;
         $user->save();
 
         return redirect()->back()->with('success', 'Status akun ' . $user->name . ' berhasil diperbarui menjadi ' . strtoupper($user->status) . '!');
     }
+
 
     // --- 6. MANAJEMEN RETUR / REFUND ---
     public function returnsIndex()
@@ -446,13 +465,19 @@ class AdminController extends Controller
     // SUPER ADMIN 
     public function adminsIndex()
     {
+        $this->ensureSuperAdmin();
+
         $settings = Setting::pluck('value', 'key')->all();
         $admins = User::whereIn('role', ['admin', 'super_admin'])->latest()->get();
+
         return view('admin.admins.index', compact('settings', 'admins'));
     }
 
+
     public function adminsStore(Request $request)
     {
+        $this->ensureSuperAdmin();
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
@@ -473,14 +498,80 @@ class AdminController extends Controller
 
     public function adminsDestroy($id)
     {
+        $this->ensureSuperAdmin();
+
         $admin = User::findOrFail($id);
-        
-        // Mencegah super admin menghapus akunnya sendiri
+
+        abort_unless(in_array($admin->role, ['admin', 'super_admin']), 404);
+
         if ($admin->id === auth()->id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
         $admin->delete();
+
         return redirect()->route('admin.admins.index')->with('success', 'Akses admin berhasil dicabut/dihapus!');
     }
+
+
+
+    private function isSuperAdmin(): bool
+    {
+        return optional(auth()->user())->role === 'super_admin';
+    }
+
+    private function ensureSuperAdmin(): void
+    {
+        abort_unless($this->isSuperAdmin(), 403, 'Hanya Super Admin yang dapat mengakses halaman ini.');
+    }
+
+
+    public function activityLogsIndex(Request $request)
+    {
+        $this->ensureSuperAdmin();
+ 
+        $request->validate([
+            'admin'  => 'nullable|integer',
+            'action' => 'nullable|string|max:30',
+            'from'   => 'nullable|date',
+            'to'     => 'nullable|date',
+            'q'      => 'nullable|string|max:100',
+        ]);
+ 
+        $settings = Setting::pluck('value', 'key')->all();
+ 
+        $logs = ActivityLog::query()
+            ->when($request->filled('admin'), function ($query) use ($request) {
+                $query->where('user_id', $request->admin);
+            })
+            ->when($request->filled('action'), function ($query) use ($request) {
+                $query->where('action', $request->action);
+            })
+            ->when($request->filled('from'), function ($query) use ($request) {
+                $query->whereDate('created_at', '>=', $request->from);
+            })
+            ->when($request->filled('to'), function ($query) use ($request) {
+                $query->whereDate('created_at', '<=', $request->to);
+            })
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $query->where('description', 'like', '%' . $request->q . '%');
+            })
+            ->latest('created_at')
+            ->latest('id')
+            ->paginate(20)
+            ->onEachSide(1)
+            ->withQueryString();
+ 
+        $admins = User::whereIn('role', ActivityLog::TRACKED_ROLES)
+            ->orderBy('name')
+            ->get(['id', 'name', 'role', 'status']);
+ 
+        $lastLogins = ActivityLog::where('action', 'login')
+            ->selectRaw('user_id, MAX(created_at) as last_login')
+            ->groupBy('user_id')
+            ->pluck('last_login', 'user_id');
+ 
+        return view('admin.activity-logs.index', compact('settings', 'logs', 'admins', 'lastLogins'));
+    }
+
 }

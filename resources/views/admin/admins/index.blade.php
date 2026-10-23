@@ -32,6 +32,7 @@
                         <th>Email</th>
                         <th>Role / Hak Akses</th>
                         <th>Status</th>
+                        <th>Ubah Status</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -48,9 +49,25 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="status-badge {{ $adm->status === 'active' ? 'status-paid' : 'status-other' }}">
+                                <span class="status-badge {{ $adm->status === 'active' ? 'status-paid' : ($adm->status === 'suspended' ? 'status-verify' : 'status-other') }}">
                                     {{ ucfirst($adm->status) }}
                                 </span>
+                            </td>
+                            <td>
+                                @if($adm->id !== auth()->id())
+                                    <form action="{{ route('admin.users.updateStatus', $adm->id) }}" method="POST">
+                                        @csrf
+                                        <select name="status" class="status-select"
+                                            aria-label="Ubah status akun {{ $adm->name }}"
+                                            onchange="this.form.submit()">
+                                            <option value="active" {{ $adm->status === 'active' ? 'selected' : '' }}>Active (Normal)</option>
+                                            <option value="suspended" {{ $adm->status === 'suspended' ? 'selected' : '' }}>Suspend (Tangguhkan)</option>
+                                            <option value="banned" {{ $adm->status === 'banned' ? 'selected' : '' }}>Banned (Blokir)</option>
+                                        </select>
+                                    </form>
+                                @else
+                                    <span class="text-muted small">&mdash;</span>
+                                @endif
                             </td>
                             <td>
                                 @if($adm->id !== auth()->id())

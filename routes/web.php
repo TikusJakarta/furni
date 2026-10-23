@@ -125,5 +125,8 @@ Route::middleware(['auth', 'super_admin'])->prefix('admin')->name('admin.')->gro
     Route::get('/admins', [AdminController::class, 'adminsIndex'])->name('admins.index');
     Route::post('/admins', [AdminController::class, 'adminsStore'])->name('admins.store');
     Route::delete('/admins/{id}', [AdminController::class, 'adminsDestroy'])->name('admins.destroy');
+
+    // audit logs
+    Route::get('/activity-logs', [AdminController::class, 'activityLogsIndex'])->name('activity-logs.index');
 });
 });

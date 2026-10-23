@@ -1532,3 +1532,87 @@
 .admin-dash .tp-links span { margin-right: 14px; font-weight: 600; color: var(--site-footer-link, #2f2f2f); }
 .admin-dash .tp-social { display: flex; gap: 6px; margin-top: 12px; }
 .admin-dash .tp-social b { width: 22px; height: 22px; border-radius: 50%; background: var(--site-footer-accent, #3b5d50); opacity: .2; }
+
+
+/* ==========================================================
+   Log Aktivitas (khusus Super Admin)
+   ========================================================== */
+.admin-dash .presence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.admin-dash .presence-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 14px;
+}
+.admin-dash .presence-main { min-width: 0; }
+.admin-dash .presence-main strong,
+.admin-dash .presence-role,
+.admin-dash .presence-time {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-dash .presence-main strong { font-size: .9rem; }
+.admin-dash .presence-role { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ad-green-700); }
+.admin-dash .presence-time { font-size: .78rem; color: var(--ad-muted); }
+
+/* Filter */
+.admin-dash .log-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 20px;
+    padding: 18px 20px;
+    background: #fff;
+    border: 1px solid var(--ad-line);
+    border-radius: 14px;
+}
+.admin-dash .log-filter .ad-label { margin-bottom: 6px; }
+.admin-dash .log-filter-actions { display: flex; gap: 8px; }
+.admin-dash .log-filter-actions .btn-submit { flex: none; padding: 11px 20px; }
+.admin-dash .log-filter-actions .btn-cancel { padding: 11px 18px; }
+
+/* Tabel */
+.admin-dash .orders-table--logs { min-width: 940px; }
+.admin-dash .orders-table .log-time { white-space: nowrap; font-weight: 600; }
+.admin-dash .orders-table .log-desc { min-width: 220px; }
+.admin-dash .orders-table .log-detail-cell { min-width: 200px; }
+
+.admin-dash .log-detail summary {
+    list-style: none;
+    cursor: pointer;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ad-green-700);
+}
+.admin-dash .log-detail summary::-webkit-details-marker { display: none; }
+.admin-dash .log-detail summary::after { content: ' \25BE'; }
+.admin-dash .log-detail[open] summary::after { content: ' \25B4'; }
+.admin-dash .log-detail summary:focus-visible { outline: 3px solid var(--ad-yellow); outline-offset: 2px; border-radius: 4px; }
+
+.admin-dash .log-changes {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: .8rem;
+    overflow-wrap: anywhere;
+}
+.admin-dash .log-field { margin-right: 6px; font-weight: 700; }
+.admin-dash .log-old,
+.admin-dash .log-new { padding: 1px 6px; border-radius: 6px; }
+.admin-dash .log-old { background: var(--ad-fail-bg); color: var(--ad-fail-fg); text-decoration: line-through; }
+.admin-dash .log-new { background: var(--ad-paid-bg); color: var(--ad-paid-fg); }
+.admin-dash .log-changes i { margin: 0 4px; font-size: .68rem; color: var(--ad-muted); }

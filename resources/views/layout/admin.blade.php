@@ -1,23 +1,9 @@
 @extends('layout.app')
 
-{{--
-    Layout khusus halaman admin: sidebar kiri + konten kanan, tanpa navbar & footer situs.
-    Simpan di: resources/views/layout/admin.blade.php
-    Halaman admin cukup: @extends('layout.admin') lalu isi @section('admin_content').
-
-    MENU diatur di array $adminMenu di bawah.
-    - Item tanpa 'children'  -> menu biasa
-    - Item dengan 'children' -> menu induk dengan submenu. Klik nama induk = langsung
-      ke submenu pertama; klik panah kecil di kanannya = buka/tutup submenu.
-    'match' = daftar nama route yang membuat item itu ditandai aktif (boleh pakai *).
---}}
-
-{{-- Memberi tahu layout.app agar navbar & footer situs disembunyikan --}}
 @section('hide_site_chrome', '1')
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') }}?v={{ filemtime(public_path('css/admin-dashboard.css')) }}">
-    {{-- Pasang status sidebar (ciut/luas) sebelum halaman digambar, supaya tidak berkedip --}}
     <script>
         try {
             if (localStorage.getItem('adminSidebar') === 'collapsed') {
@@ -83,13 +69,39 @@
                         'params' => ['status' => 'suspended'], 'query' => ['status' => 'suspended']],
                     ['label' => 'Diblokir', 'flat_label' => 'Pengguna Diblokir', 'route' => 'admin.users.index', 'match' => ['admin.users.*'],
                         'params' => ['status' => 'banned'], 'query' => ['status' => 'banned']],
+                    // Khusus Super Admin: kelola akun administrator (tambah, hapus, ubah status)
+                    ['label' => 'Manajemen Admin', 'route' => 'admin.admins.index', 'match' => ['admin.admins.*'],
+                        'roles' => ['super_admin']],
                 ],
+            ],
+            [
+                'label' => 'Log Aktivitas', 'icon' => 'fa-clock-rotate-left',
+                'route' => 'admin.activity-logs.index', 'match' => ['admin.activity-logs.*'],
+                'roles' => ['super_admin'],
             ],
             [
                 'label' => 'Pengaturan', 'icon' => 'fa-cogs',
                 'route' => 'admin.settings.index', 'match' => ['admin.settings.*'],
             ],
         ];
+
+        // Sembunyikan menu yang tidak boleh dilihat role yang sedang login
+        $currentRole = auth()->user()->role ?? null;
+        $canSee = function ($item) use ($currentRole) {
+            return empty($item['roles']) || in_array($currentRole, $item['roles']);
+        };
+
+        $adminMenu = collect($adminMenu)
+            ->filter($canSee)
+            ->map(function ($item) use ($canSee) {
+                if (isset($item['children'])) {
+                    $item['children'] = array_values(array_filter($item['children'], $canSee));
+                }
+
+                return $item;
+            })
+            ->values()
+            ->all();
 
         // Versi "rata" untuk layar kecil (strip menu horizontal tidak cocok untuk submenu)
         $flatMenu = collect($adminMenu)->flatMap(function ($item) {
