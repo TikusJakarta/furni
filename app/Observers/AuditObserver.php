@@ -65,8 +65,7 @@ class AuditObserver
             return;
         }
 
-        // Stok produk berkurang otomatis saat pesanan ditandai "paid": itu efek samping,
-        // bukan perubahan yang dilakukan admin pada produk.
+        // Stok produk berkurang otomatis saat pesanan ditandai "paid"
         if ($model instanceof Product && Route::currentRouteName() === 'admin.orders.updateStatus') {
             return;
         }

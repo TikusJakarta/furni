@@ -49,10 +49,16 @@ function updateGrandTotal(shippingCost, protectionFee) {
     const subtotalEl = document.getElementById('subtotal-text');
     const subtotal = subtotalEl ? parseFloat(subtotalEl.dataset.subtotal) || 0 : 0;
 
+    // Ambil nilai PPN (12%) dari atribut data-tax atau hitung dari subtotal
+    const taxEl = document.getElementById('tax-text');
+    const tax = taxEl ? parseFloat(taxEl.dataset.tax) || (subtotal * 0.12) : (subtotal * 0.12);
+
+    // Ambil nilai diskon kupon dengan aman (menghilangkan karakter non-angka kecuali strip jika perlu)
     const couponDiscountEl = document.getElementById('coupon-discount-text');
     let discount = 0;
     if (couponDiscountEl) {
-        const rawDiscount = couponDiscountEl.innerText.replace(/[^0-9]/g, '');
+        const rawText = couponDiscountEl.innerText || '';
+        const rawDiscount = rawText.replace(/[^0-9]/g, '');
         discount = parseFloat(rawDiscount) || 0;
     }
 
@@ -60,7 +66,7 @@ function updateGrandTotal(shippingCost, protectionFee) {
     const useProtection = protectionCheckbox ? protectionCheckbox.checked : false;
     const actualProtectionFee = useProtection ? protectionFee : 0;
 
-    const grandTotal = Math.max(0, subtotal - discount) + shippingCost;
+    const grandTotal = Math.max(0, (subtotal + tax) - discount) + shippingCost + actualProtectionFee;
 
     const orderTotalText = document.getElementById('order-total-text');
     if (orderTotalText) {

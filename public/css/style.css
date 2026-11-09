@@ -99,7 +99,7 @@ a {
 
 /* Hero Section (Padding & Mobile Image Fix) */
 .hero {
-  background: #3b5d50;
+  background: linear-gradient(135deg, #3b5d50, #5b8473);
   padding: 3rem 0 2rem 0; }
   @media (min-width: 768px) {
     .hero {

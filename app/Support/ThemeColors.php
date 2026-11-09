@@ -3,9 +3,9 @@
 namespace App\Support;
 
 /**
- * Daftar warna tampilan website (navbar, hero, footer) yang bisa diatur admin.
+ * Daftar warna tampilan website yang bisa diatur admin (navbar, hero, tombol, footer).
  * Satu sumber data: dipakai halaman Pengaturan (form), controller (validasi),
- * dan layout (menghasilkan variabel CSS).
+ * dan layout (menghasilkan variabel CSS, termasuk warna gradasi turunannya).
  *
  * Simpan di: app/Support/ThemeColors.php
  */
@@ -22,10 +22,11 @@ class ThemeColors
     public static function fields(): array
     {
         return [
-            'theme_navbar_bg'     => ['group' => 'Navbar & Hero', 'label' => 'Latar navbar',               'var' => '--site-navbar-bg',     'default' => '#3b5d50'],
-            'theme_navbar_link'   => ['group' => 'Navbar & Hero', 'label' => 'Logo & menu navbar',         'var' => '--site-navbar-link',   'default' => '#ffffff', 'against' => 'theme_navbar_bg'],
-            'theme_navbar_accent' => ['group' => 'Navbar & Hero', 'label' => 'Garis menu aktif',           'var' => '--site-navbar-accent', 'default' => '#f9bf29'],
-            'theme_hero_bg'       => ['group' => 'Navbar & Hero', 'label' => 'Latar hero (judul halaman)', 'var' => '--site-hero-bg',       'default' => '#3b5d50'],
+            'theme_navbar_bg'     => ['group' => 'Navbar, Hero & Tombol', 'label' => 'Latar navbar',                   'var' => '--site-navbar-bg',     'default' => '#3b5d50'],
+            'theme_navbar_link'   => ['group' => 'Navbar, Hero & Tombol', 'label' => 'Logo & menu navbar',             'var' => '--site-navbar-link',   'default' => '#ffffff', 'against' => 'theme_navbar_bg'],
+            'theme_hero_bg'       => ['group' => 'Navbar, Hero & Tombol', 'label' => 'Latar hero (judul halaman)',     'var' => '--site-hero-bg',       'default' => '#3b5d50'],
+            'theme_primary'       => ['group' => 'Navbar, Hero & Tombol', 'label' => 'Warna utama (tombol & ikon)',    'var' => '--site-primary',       'default' => '#3b5d50'],
+            'theme_navbar_accent' => ['group' => 'Navbar, Hero & Tombol', 'label' => 'Aksen (garis menu & tombol kuning)', 'var' => '--site-navbar-accent', 'default' => '#f9bf29'],
 
             'theme_footer_bg'     => ['group' => 'Footer', 'label' => 'Latar footer',       'var' => '--site-footer-bg',     'default' => '#ffffff'],
             'theme_footer_text'   => ['group' => 'Footer', 'label' => 'Teks footer',        'var' => '--site-footer-text',   'default' => '#6a6a6a', 'against' => 'theme_footer_bg'],
@@ -34,7 +35,7 @@ class ThemeColors
         ];
     }
 
-    /** Dikelompokkan untuk tampilan form: ['Navbar & Hero' => [...], 'Footer' => [...]] */
+    /** Dikelompokkan untuk tampilan form */
     public static function groups(): array
     {
         $groups = [];
@@ -72,14 +73,16 @@ class ThemeColors
 
     /**
      * Membuat blok variabel CSS dari pengaturan yang tersimpan, misalnya
-     * ":root{--site-navbar-bg:#112233;}". Hanya warna yang valid dan berbeda dari
-     * bawaan yang ditulis; kalau tidak ada yang diubah hasilnya string kosong.
-     * Nilai divalidasi ulang di sini, jadi aman dipasang langsung di <style>.
+     * ":root{--site-primary:#112233;--site-primary-dark:#0d1a28;...}".
+     * Hanya warna yang valid dan berbeda dari bawaan yang ditulis, beserta warna
+     * turunannya (lebih gelap / lebih terang) untuk gradasi. Kalau tidak ada yang
+     * diubah hasilnya string kosong. Nilai divalidasi ulang di sini, jadi aman
+     * dipasang langsung di <style>.
      */
     public static function css(array $settings): string
     {
         $fields = self::fields();
-        $vars = [];
+        $set = [];
 
         foreach ($fields as $key => $field) {
             $value = $settings[$key] ?? null;
@@ -91,26 +94,66 @@ class ThemeColors
             $value = strtolower($value);
 
             if ($value !== $field['default']) {
-                $vars[$field['var']] = $value;
+                $set[$key] = $value;
             }
         }
 
-        if ($vars === []) {
+        if ($set === []) {
             return '';
         }
 
+        $vars = [];
+
+        foreach ($set as $key => $value) {
+            $vars[$fields[$key]['var']] = $value;
+        }
+
+        // Navbar & hero: gradasi gelap -> warna asli -> terang
+        foreach (['theme_navbar_bg' => '--site-navbar-bg', 'theme_hero_bg' => '--site-hero-bg'] as $key => $var) {
+            if (isset($set[$key])) {
+                $vars[$var . '-dark']  = self::mix($set[$key], '#000000', 0.22);
+                $vars[$var . '-light'] = self::mix($set[$key], '#ffffff', 0.22);
+            }
+        }
+
         // Ikon user & keranjang di navbar berupa gambar putih: dibalik jadi gelap bila latar navbar terang
-        if (isset($vars['--site-navbar-bg']) && self::isLight($vars['--site-navbar-bg'])) {
+        if (isset($set['theme_navbar_bg']) && self::isLight($set['theme_navbar_bg'])) {
             $vars['--site-navbar-icon-filter'] = 'invert(1)';
         }
 
-        // Warna turunan footer
-        if (isset($vars['--site-footer-accent'])) {
-            $vars['--site-footer-accent-soft'] = self::mixWithWhite($vars['--site-footer-accent'], 0.84);
+        // Warna utama: tombol, ikon, panel produk, dan warna latar halaman yang selaras
+        if (isset($set['theme_primary'])) {
+            $p = $set['theme_primary'];
+
+            $vars['--site-primary-dark']   = self::mix($p, '#000000', 0.22);
+            $vars['--site-primary-light']  = self::mix($p, '#ffffff', 0.25);
+            $vars['--site-primary-rgb']    = implode(', ', self::rgb($p));
+            $vars['--site-primary-tint']   = self::mix($p, '#ffffff', 0.88);
+            $vars['--site-primary-tint-2'] = self::mix($p, '#ffffff', 0.78);
+            $vars['--site-page-top']       = self::mix($p, '#ffffff', 0.95);
+            $vars['--site-page-bottom']    = self::mix($p, '#ffffff', 0.88);
         }
 
-        if (isset($vars['--site-footer-link'])) {
-            [$r, $g, $b] = self::rgb($vars['--site-footer-link']);
+        // Aksen (kuning): tombol sekunder dan kilau di hero
+        if (isset($set['theme_navbar_accent'])) {
+            $a = $set['theme_navbar_accent'];
+
+            $vars['--site-navbar-accent-dark']  = self::mix($a, '#000000', 0.12);
+            $vars['--site-navbar-accent-light'] = self::mix($a, '#ffffff', 0.30);
+            $vars['--site-accent-rgb']          = implode(', ', self::rgb($a));
+        }
+
+        // Footer: memudar ke warna sedikit lebih gelap di bagian bawah
+        if (isset($set['theme_footer_bg'])) {
+            $vars['--site-footer-bg-end'] = self::mix($set['theme_footer_bg'], '#000000', 0.07);
+        }
+
+        if (isset($set['theme_footer_accent'])) {
+            $vars['--site-footer-accent-soft'] = self::mix($set['theme_footer_accent'], '#ffffff', 0.84);
+        }
+
+        if (isset($set['theme_footer_link'])) {
+            [$r, $g, $b] = self::rgb($set['theme_footer_link']);
             $vars['--site-footer-link-hover'] = "rgba($r, $g, $b, 0.5)";
         }
 
@@ -137,11 +180,17 @@ class ThemeColors
         return (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255 > 0.6;
     }
 
-    private static function mixWithWhite(string $hex, float $whiteRatio): string
+    /** Campuran $hex dan $with; $ratio = porsi $with (0 = $hex murni, 1 = $with murni) */
+    private static function mix(string $hex, string $with, float $ratio): string
     {
-        $mixed = array_map(function ($channel) use ($whiteRatio) {
-            return (int) round($channel * (1 - $whiteRatio) + 255 * $whiteRatio);
-        }, self::rgb($hex));
+        $a = self::rgb($hex);
+        $b = self::rgb($with);
+
+        $mixed = [];
+
+        foreach ($a as $i => $channel) {
+            $mixed[] = (int) round($channel * (1 - $ratio) + $b[$i] * $ratio);
+        }
 
         return sprintf('#%02x%02x%02x', ...$mixed);
     }

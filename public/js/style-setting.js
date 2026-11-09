@@ -1,3 +1,5 @@
+// Pemilih warna: sinkron picker <-> kode hex, pratinjau langsung, dan peringatan kontras
+
 (function () {
             var preview = document.getElementById('themePreview');
             var rows = Array.prototype.slice.call(document.querySelectorAll('[data-theme-field]'));

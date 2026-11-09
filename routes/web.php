@@ -116,17 +116,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/settings', [AdminController::class, 'settingsIndex'])->name('settings.index');
         Route::post('/settings', [AdminController::class, 'settingsUpdate'])->name('settings.update');
 
+        Route::get('/orders/{id}/invoice', [AdminController::class, 'ordersInvoice'])->name('orders.invoice');
+
         // Logout Admin (Menggunakan AdminController@logout yang mengarah ke admin login)
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
     });
 
     // RUTE KHUSUS SUPER ADMIN
-Route::middleware(['auth', 'super_admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/admins', [AdminController::class, 'adminsIndex'])->name('admins.index');
-    Route::post('/admins', [AdminController::class, 'adminsStore'])->name('admins.store');
-    Route::delete('/admins/{id}', [AdminController::class, 'adminsDestroy'])->name('admins.destroy');
+    Route::middleware(['auth', 'super_admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/admins', [AdminController::class, 'adminsIndex'])->name('admins.index');
+        Route::post('/admins', [AdminController::class, 'adminsStore'])->name('admins.store');
+        Route::delete('/admins/{id}', [AdminController::class, 'adminsDestroy'])->name('admins.destroy');
 
-    // audit logs
-    Route::get('/activity-logs', [AdminController::class, 'activityLogsIndex'])->name('activity-logs.index');
-});
+        // audit logs
+        Route::get('/activity-logs', [AdminController::class, 'activityLogsIndex'])->name('activity-logs.index');
+    });
 });

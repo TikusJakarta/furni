@@ -30,7 +30,6 @@ class CheckoutController extends Controller
             $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
             $product = Product::find($productId);
 
-            // Ambil harga dan nama dari session cart (yang sudah membawa varian) atau fallback ke database
             $cartItems[$cartKey] = [
                 'name' => $item['name'] ?? ($product->name ?? 'Produk'),
                 'price' => $item['price'] ?? ($product->price ?? 0),
@@ -42,7 +41,8 @@ class CheckoutController extends Controller
             $subtotal += $cartItems[$cartKey]['price'] * $cartItems[$cartKey]['quantity'];
         }
 
-        // Perhitungan Diskon Kupon
+        $tax = $subtotal * 0.12;
+
         $discount = 0;
         $coupon = session()->get('coupon');
         if ($coupon) {
@@ -54,11 +54,11 @@ class CheckoutController extends Controller
         }
 
         $discount = min($discount, $subtotal);
-        $total = $subtotal - $discount;
+        $total = ($subtotal + $tax) - $discount;
 
         $userAddresses = auth()->check() ? auth()->user()->addresses()->latest()->get() : collect();
 
-        return view('checkout', compact('settings', 'cartItems', 'subtotal', 'discount', 'total', 'coupon', 'userAddresses'));
+        return view('checkout', compact('settings', 'cartItems', 'subtotal', 'tax', 'discount', 'total', 'coupon', 'userAddresses'));
     }
 
     public function storeAddress(Request $request)
@@ -265,7 +265,6 @@ class CheckoutController extends Controller
         try {
             $subtotal = 0;
 
-            // 1. Validasi Stok Utama & Varian Terlebih Dahulu
             foreach ($rawCart as $cartKey => $item) {
                 $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
                 $variantId = $item['product_variant_id'] ?? null;
@@ -299,6 +298,8 @@ class CheckoutController extends Controller
                 $subtotal += $item['price'] * $item['quantity'];
             }
 
+            $tax = $subtotal * 0.12;
+
             $discount = 0;
             $coupon = session()->get('coupon');
             if ($coupon) {
@@ -309,7 +310,8 @@ class CheckoutController extends Controller
             $shippingCost = (float) $request->shipping_cost;
             $useProtection = $request->has('use_protection');
             $protectionFee = $useProtection ? ($subtotal * 0.005) : 0;
-            $totalPrice = $subtotalAfterDiscount + $shippingCost + $protectionFee;
+            
+            $totalPrice = $subtotalAfterDiscount + $tax + $shippingCost + $protectionFee;
 
             $order = Order::create([
                 'user_id' => auth()->id(),
@@ -335,7 +337,6 @@ class CheckoutController extends Controller
                 'protection_fee' => $protectionFee,
             ]);
 
-            // 2. Simpan Order Items dan Catat / Batasi Stok
             foreach ($rawCart as $cartKey => $item) {
                 $productId = $item['product_id'] ?? explode('_', $cartKey)[0];
                 $variantId = $item['product_variant_id'] ?? null;
@@ -343,7 +344,7 @@ class CheckoutController extends Controller
                 \App\Models\OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $productId,
-                    'product_variant_id' => $variantId, // Pastikan kolom ini ada di tabel order_items atau sesuaikan nama kolomnya
+                    'product_variant_id' => $variantId,
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                 ]);

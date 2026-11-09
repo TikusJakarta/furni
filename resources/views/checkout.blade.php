@@ -146,7 +146,6 @@
                                         list="city-options" required value="{{ old('state_country') }}"
                                         placeholder="Ketik nama kota...">
 
-                                    {{-- Datalist kosong, diisi otomatis oleh JavaScript dari JSON --}}
                                     <datalist id="city-options"></datalist>
                                     @error('state_country') <small class="text-danger">{{ $message }}</small> @enderror
                                 </div>
@@ -163,7 +162,6 @@
                                             value="{{ old('postal_zip') }}">
                                     </div>
 
-                                    {{-- Datalist kosong, diisi otomatis oleh JavaScript dari JSON --}}
                                     <datalist id="postal-options"></datalist>
 
                                     <small class="text-muted mt-1 d-block" style="font-size: 11px;">Bisa pilih dari kota
@@ -199,7 +197,6 @@
                                 @error('latitude') <small class="text-danger">{{ $message }}</small> @enderror
                             </div>
 
-                            {{-- Kotak & Tombol Simpan Alamat Baru --}}
                             <div class="mt-4 p-4 bg-light border rounded shadow-sm mb-4">
                                 <h5 class="font-weight-bold text-black mb-2" style="font-size: 15px;">Simpan Alamat Ini
                                     untuk Checkout Berikutnya</h5>
@@ -321,6 +318,15 @@
                                                 <td class="text-black text-end" id="subtotal-text"
                                                     data-subtotal="{{ $subtotal ?? 0 }}">Rp
                                                     {{ number_format($subtotal ?? 0, 0, ',', '.') }}
+                                                </td>
+                                            </tr>
+
+                                            <!-- BARIS PPN 12% -->
+                                            <tr>
+                                                <td class="text-black font-weight-bold"><strong>PPN (12%)</strong></td>
+                                                <td class="text-black text-end" id="tax-text"
+                                                    data-tax="{{ $tax ?? 0 }}">Rp
+                                                    {{ number_format($tax ?? 0, 0, ',', '.') }}
                                                 </td>
                                             </tr>
 

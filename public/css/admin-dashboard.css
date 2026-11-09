@@ -1512,7 +1512,10 @@
     justify-content: space-between;
     align-items: center;
     padding: 14px 18px;
-    background: var(--site-navbar-bg, #3b5d50);
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--site-navbar-bg, #3b5d50) 78%, #000) 0%,
+        var(--site-navbar-bg, #3b5d50) 50%,
+        color-mix(in srgb, var(--site-navbar-bg, #3b5d50) 78%, #fff) 100%);
     color: var(--site-navbar-link, #ffffff);
 }
 .admin-dash .tp-brand { font-size: 1.1rem; font-weight: 700; }
@@ -1520,13 +1523,24 @@
 .admin-dash .tp-menu span { margin-left: 14px; padding-bottom: 4px; opacity: .5; }
 .admin-dash .tp-menu span.is-active { opacity: 1; border-bottom: 3px solid var(--site-navbar-accent, #f9bf29); }
 
-.admin-dash .tp-hero { padding: 26px 18px; background: var(--site-hero-bg, #3b5d50); color: #fff; }
+.admin-dash .tp-hero {
+    padding: 26px 18px;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--site-hero-bg, #3b5d50) 78%, #000) 0%,
+        var(--site-hero-bg, #3b5d50) 50%,
+        color-mix(in srgb, var(--site-hero-bg, #3b5d50) 78%, #fff) 100%);
+    color: #fff;
+}
 .admin-dash .tp-hero strong { font-size: 1.05rem; font-weight: 700; }
 
 .admin-dash .tp-body { display: flex; gap: 10px; padding: 18px; }
 .admin-dash .tp-body span { flex: 1; height: 46px; border-radius: 8px; background: #fff; }
 
-.admin-dash .tp-footer { padding: 18px; background: var(--site-footer-bg, #ffffff); color: var(--site-footer-text, #6a6a6a); }
+.admin-dash .tp-footer {
+    padding: 18px;
+    background: linear-gradient(180deg, var(--site-footer-bg, #ffffff) 0%, color-mix(in srgb, var(--site-footer-bg, #ffffff) 93%, #000) 100%);
+    color: var(--site-footer-text, #6a6a6a);
+}
 .admin-dash .tp-logo { font-size: 1.05rem; font-weight: 700; color: var(--site-footer-accent, #3b5d50); }
 .admin-dash .tp-footer p { margin: 4px 0 10px; }
 .admin-dash .tp-links span { margin-right: 14px; font-weight: 600; color: var(--site-footer-link, #2f2f2f); }

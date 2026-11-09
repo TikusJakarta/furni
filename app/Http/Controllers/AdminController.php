@@ -103,7 +103,7 @@ class AdminController extends Controller
         $totalCustomers = $customers()->count();
         $newCustomers = $customers()->latest()->take(5)->get();
 
-        // Pendapatan bulan ini vs bulan lalu
+        // Pendapatan bulan ini dan bulan lalu
         $revenueThisMonth = Order::whereIn('status', $paidStatuses)
             ->whereBetween('created_at', [now()->startOfMonth(), now()])
             ->sum('total_price');
@@ -136,14 +136,11 @@ class AdminController extends Controller
             ->pluck('total', 'status')
             ->toArray();
 
-        // Perlu tindakan
         $pendingVerification = $statusCounts['verifikasi'] ?? 0;
         $pendingReturns = \App\Models\OrderReturn::where('status', 'pending')->count();
         $lowStockCount = Product::where('stock', '<=', 5)->count();
         $lowStockProducts = Product::where('stock', '<=', 5)->orderBy('stock')->take(5)->get();
 
-        // Produk terlaris (jumlah terjual dari item pesanan yang sudah dibayar).
-        // Nama tabel item diambil dari relasi Order::items(), jadi tidak perlu ditebak.
         $orderTable = (new Order)->getTable();
         $productTable = (new Product)->getTable();
         $itemTable = (new Order)->items()->getRelated()->getTable();
@@ -179,7 +176,7 @@ class AdminController extends Controller
     }
 
 
-    // --- 1. CRUD PRODUK ---
+    // --- CRUD PRODUK ---
     public function productsIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
@@ -278,7 +275,7 @@ class AdminController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Produk berhasil dihapus!');
     }
 
-    // --- 2. MANAJEMEN PESANAN ADMIN ---
+    // --- MANAJEMEN PESANAN ADMIN ---
     public function ordersIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
@@ -327,7 +324,84 @@ class AdminController extends Controller
         }
     }
 
-    // --- 3. CMS PENGATURAN WEB ---
+    // Invoice pesanan
+    public function ordersInvoice($id)
+    {
+        $settings = Setting::pluck('value', 'key')->all();
+        $order = Order::with('user', 'orderItems.product')->findOrFail($id);
+
+        $items = $order->orderItems->map(function ($item) {
+            $price = $item->price ?? optional($item->product)->price ?? 0;
+
+            return [
+                'name' => optional($item->product)->name ?? 'Produk sudah dihapus',
+                'price' => $price,
+                'qty' => $item->quantity,
+                'subtotal' => $price * $item->quantity,
+            ];
+        })->all();
+
+        $subtotal = collect($items)->sum('subtotal');
+        
+        $tax = $subtotal * 0.12; 
+
+        $protectionFee = $order->is_protected ? (float) ($order->protection_fee ?? ($subtotal * 0.005)) : 0;
+
+        $shipping = (int) $order->shipping_cost;
+        $total = $order->total_price;
+        
+        $discount = max(0, ($subtotal + $tax + $shipping + $protectionFee) - $total);
+
+        $isPaid = in_array($order->status, ['paid', 'packing', 'shipping', 'shipped', 'completed']);
+
+        if ($order->status === 'cancelled') {
+            $stamp = ['label' => 'DIBATALKAN', 'class' => 'inv-stamp--cancel'];
+        } elseif ($isPaid) {
+            $stamp = ['label' => 'LUNAS', 'class' => 'inv-stamp--paid'];
+        } else {
+            $stamp = ['label' => 'BELUM LUNAS', 'class' => 'inv-stamp--unpaid'];
+        }
+
+        $company = ($settings['invoice_company'] ?? '') ?: ($settings['brand_name'] ?? 'Furni');
+
+        $customerName = trim($order->first_name . ' ' . $order->last_name) ?: optional($order->user)->name ?? 'Pelanggan';
+        $customerPhone = $order->phone ?? $order->phone_number ?? null;
+        $customerAddress = implode(', ', array_filter([
+            $order->address ?? $order->street_address ?? null,
+            $order->city ?? null,
+            $order->province ?? $order->state ?? null,
+            $order->postcode ?? $order->postal_code ?? $order->zip ?? null,
+        ]));
+
+        $paymentLabels = ['qr' => 'QRIS', 'transfer' => 'Transfer Bank'];
+        $paymentMethod = $paymentLabels[$order->payment_method ?? ''] ?? ($order->payment_method ? ucfirst($order->payment_method) : 'Transfer Bank');
+
+        return view('admin.orders.invoice', [
+            'order' => $order,
+            'invoiceNumber' => 'INV-' . $order->created_at->format('Ymd') . '-' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
+            'company' => $company,
+            'companyAddress' => $settings['invoice_address'] ?? '',
+            'companyPhone' => $settings['invoice_phone'] ?? '',
+            'companyEmail' => $settings['invoice_email'] ?? '',
+            'paymentInfo' => $settings['invoice_payment_info'] ?? '',
+            'note' => $settings['invoice_note'] ?? '',
+            'customerName' => $customerName,
+            'customerPhone' => $customerPhone,
+            'customerAddress' => $customerAddress,
+            'paymentMethod' => $paymentMethod,
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'tax' => $tax,
+            'protectionFee' => $protectionFee,
+            'shipping' => $shipping,
+            'discount' => $discount,
+            'total' => $total,
+            'isPaid' => $isPaid,
+            'stamp' => $stamp,
+        ]);
+    }
+
+    // --- CMS PENGATURAN WEB ---
     public function settingsIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
@@ -356,7 +430,7 @@ class AdminController extends Controller
     }
 
 
-    // --- 4. MANAJEMEN KUPON / PROMO ---
+    // --- MANAJEMEN KUPON / PROMO ---
     public function couponsIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
@@ -399,7 +473,7 @@ class AdminController extends Controller
         return redirect()->route('admin.coupons.index')->with('success', 'Kode promo berhasil dihapus!');
     }
 
-    // --- 5. MANAJEMEN PENGGUNA (USER) ---
+    // --- MANAJEMEN PENGGUNA (USER) ---
     public function usersIndex(Request $request)
     {
         $settings = Setting::pluck('value', 'key')->all();
@@ -441,7 +515,7 @@ class AdminController extends Controller
     }
 
 
-    // --- 6. MANAJEMEN RETUR / REFUND ---
+    // --- MANAJEMEN RETUR / REFUND ---
     public function returnsIndex()
     {
         $settings = Setting::pluck('value', 'key')->all();
@@ -529,17 +603,17 @@ class AdminController extends Controller
     public function activityLogsIndex(Request $request)
     {
         $this->ensureSuperAdmin();
- 
+
         $request->validate([
-            'admin'  => 'nullable|integer',
+            'admin' => 'nullable|integer',
             'action' => 'nullable|string|max:30',
-            'from'   => 'nullable|date',
-            'to'     => 'nullable|date',
-            'q'      => 'nullable|string|max:100',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+            'q' => 'nullable|string|max:100',
         ]);
- 
+
         $settings = Setting::pluck('value', 'key')->all();
- 
+
         $logs = ActivityLog::query()
             ->when($request->filled('admin'), function ($query) use ($request) {
                 $query->where('user_id', $request->admin);
@@ -561,16 +635,16 @@ class AdminController extends Controller
             ->paginate(20)
             ->onEachSide(1)
             ->withQueryString();
- 
+
         $admins = User::whereIn('role', ActivityLog::TRACKED_ROLES)
             ->orderBy('name')
             ->get(['id', 'name', 'role', 'status']);
- 
+
         $lastLogins = ActivityLog::where('action', 'login')
             ->selectRaw('user_id, MAX(created_at) as last_login')
             ->groupBy('user_id')
             ->pluck('last_login', 'user_id');
- 
+
         return view('admin.activity-logs.index', compact('settings', 'logs', 'admins', 'lastLogins'));
     }
 

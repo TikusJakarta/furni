@@ -28,6 +28,7 @@
                         <th>Bukti Bayar</th>
                         <th>Status Saat Ini</th>
                         <th>Ubah Status</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -100,10 +101,16 @@
                                     </select>
                                 </form>
                             </td>
+
+                            <td>
+                                <a href="{{ route('admin.orders.invoice', $order->id) }}" target="_blank" class="btn btn-sm btn-outline-dark d-inline-flex align-items-center gap-1" title="Cetak / Lihat Invoice" style="font-size: 12px; padding: 5px 10px;">
+                                    <i class="fa fa-print"></i> Invoice
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="empty-state">
+                            <td colspan="8" class="empty-state">
                                 <i class="fa fa-inbox"></i>
                                 Belum ada pesanan masuk.
                             </td>

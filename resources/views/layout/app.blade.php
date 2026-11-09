@@ -16,9 +16,11 @@
     <link href="{{ asset('css/tiny-slider.css') }}" rel="stylesheet">
     <link href="{{ asset('css/style.css') }}" rel="stylesheet">
     {{-- Warna navbar, hero, footer (diatur admin di halaman Pengaturan). Harus setelah style.css --}}
-    <link href="{{ asset('css/site-theme.css') }}?v={{ filemtime(public_path('css/site-theme.css')) }}" rel="stylesheet">
-    @if(!empty($themeCss))
-        <style>{!! $themeCss !!}</style>
+    @if(!$__env->hasSection('hide_site_chrome'))
+        <link href="{{ asset('css/site-theme.css') }}?v={{ filemtime(public_path('css/site-theme.css')) }}" rel="stylesheet">
+        @if(!empty($themeCss))
+            <style>{!! $themeCss !!}</style>
+        @endif
     @endif
     
 

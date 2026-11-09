@@ -1,19 +1,12 @@
 @extends('layout.admin')
 
-@section('title', 'CMS Pengaturan Web - Admin Furni')
+@section('title', 'CMS Website - Admin Furni')
 
 @section('admin_content')
-    @php
-        // Nama bawaan menu sidebar (dari config/admin.php), dipakai sebagai placeholder
-        $menuDefaults = collect(config('admin.menu'))
-            ->filter(function ($item) { return isset($item['setting']); })
-            ->mapWithKeys(function ($item) { return [$item['setting'] => $item['label']]; });
-    @endphp
-
     <div class="page-head">
         <div>
-            <h1>CMS Pengaturan Web</h1>
-            <p>Ubah teks, judul, label, dan informasi website secara real-time.</p>
+            <h1>CMS Website</h1>
+            <p>Atur judul, teks, dan tampilan yang dilihat pengunjung di website.</p>
         </div>
     </div>
 
@@ -39,163 +32,158 @@
 
         <div class="row g-3">
 
-            <!-- UMUM -->
+            <!-- IDENTITAS & SEO -->
             <div class="col-xl-6 col-xxl-4">
                 <section class="form-card form-card--compact h-100">
                     <div class="form-card-head">
-                        <h2>Pengaturan Umum Web</h2>
-                        <p>Nama brand dan teks footer di seluruh website.</p>
+                        <h2>Identitas &amp; SEO</h2>
+                        <p>Nama toko dan deskripsi untuk mesin pencari seperti Google.</p>
                     </div>
                     <div class="ad-field">
-                        <label for="brand_name" class="ad-label">Brand Name</label>
+                        <label for="brand_name" class="ad-label">Nama Brand</label>
                         <input type="text" id="brand_name" name="brand_name" class="ad-input"
                             value="{{ $settings['brand_name'] ?? 'Furni' }}">
+                        <small class="ad-hint">Tampil di navbar, footer, dan judul tab browser.</small>
                     </div>
                     <div class="ad-field">
-                        <label for="footer_description" class="ad-label">Footer Description</label>
+                        <label for="meta_description" class="ad-label">Deskripsi Website</label>
+                        <textarea id="meta_description" name="meta_description" class="ad-input" rows="3"
+                            maxlength="255">{{ $settings['meta_description'] ?? '' }}</textarea>
+                        <small class="ad-hint">Ringkasan toko yang muncul di hasil pencarian (sekitar 150 karakter).</small>
+                    </div>
+                    <div class="ad-field">
+                        <label for="meta_keywords" class="ad-label">Kata Kunci</label>
+                        <input type="text" id="meta_keywords" name="meta_keywords" class="ad-input"
+                            value="{{ $settings['meta_keywords'] ?? '' }}" placeholder="furniture, kursi, meja, sofa">
+                        <small class="ad-hint">Pisahkan dengan koma.</small>
+                    </div>
+                </section>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="col-xl-6 col-xxl-4">
+                <section class="form-card form-card--compact h-100">
+                    <div class="form-card-head">
+                        <h2>Footer</h2>
+                        <p>Teks di bagian bawah setiap halaman.</p>
+                    </div>
+                    <div class="ad-field">
+                        <label for="footer_description" class="ad-label">Deskripsi Footer</label>
                         <textarea id="footer_description" name="footer_description" class="ad-input"
-                            rows="3">{{ $settings['footer_description'] ?? '' }}</textarea>
+                            rows="4">{{ $settings['footer_description'] ?? '' }}</textarea>
+                        <small class="ad-hint">Kosongkan untuk memakai teks bawaan template.</small>
+                    </div>
+                    <div class="ad-field">
+                        <label for="footer_newsletter_title" class="ad-label">Judul Newsletter</label>
+                        <input type="text" id="footer_newsletter_title" name="footer_newsletter_title" class="ad-input"
+                            value="{{ $settings['footer_newsletter_title'] ?? 'Subscribe to Newsletter' }}">
+                    </div>
+                    <div class="ad-field">
+                        <label for="footer_sofa_image" class="ad-label">Gambar Sofa Footer</label>
+                        <input type="text" id="footer_sofa_image" name="footer_sofa_image" class="ad-input"
+                            value="{{ $settings['footer_sofa_image'] ?? 'images/sofa.png' }}">
+                        <small class="ad-hint">Lokasi file di folder public, misalnya images/sofa.png.</small>
                     </div>
                 </section>
             </div>
 
-            <!-- DASHBOARD -->
+            <!-- MEDIA SOSIAL -->
             <div class="col-xl-6 col-xxl-4">
                 <section class="form-card form-card--compact h-100">
                     <div class="form-card-head">
-                        <h2>Judul &amp; Sambutan Dashboard</h2>
-                        <p>Teks di bagian atas dashboard admin.</p>
+                        <h2>Media Sosial</h2>
+                        <p>Tautan ikon sosial di footer. Kosongkan jika tidak dipakai.</p>
                     </div>
                     <div class="ad-field">
-                        <label for="admin_dashboard_title" class="ad-label">Judul Tab Browser</label>
-                        <input type="text" id="admin_dashboard_title" name="admin_dashboard_title" class="ad-input"
-                            value="{{ $settings['admin_dashboard_title'] ?? 'Admin Dashboard' }}">
-                        <small class="ad-hint">Tampil di tab browser saat dashboard dibuka.</small>
+                        <label for="social_facebook" class="ad-label">Facebook</label>
+                        <input type="url" id="social_facebook" name="social_facebook" class="ad-input"
+                            value="{{ $settings['social_facebook'] ?? '' }}" placeholder="https://facebook.com/tokokamu">
                     </div>
                     <div class="ad-field">
-                        <label for="admin_dashboard_welcome" class="ad-label">Teks Sambutan</label>
-                        <input type="text" id="admin_dashboard_welcome" name="admin_dashboard_welcome" class="ad-input"
-                            value="{{ $settings['admin_dashboard_welcome'] ?? '' }}">
-                        <small class="ad-hint">Kosongkan untuk memakai sapaan bawaan.</small>
+                        <label for="social_twitter" class="ad-label">Twitter / X</label>
+                        <input type="url" id="social_twitter" name="social_twitter" class="ad-input"
+                            value="{{ $settings['social_twitter'] ?? '' }}" placeholder="https://x.com/tokokamu">
+                    </div>
+                    <div class="ad-field">
+                        <label for="social_instagram" class="ad-label">Instagram</label>
+                        <input type="url" id="social_instagram" name="social_instagram" class="ad-input"
+                            value="{{ $settings['social_instagram'] ?? '' }}" placeholder="https://instagram.com/tokokamu">
+                    </div>
+                    <div class="ad-field">
+                        <label for="social_linkedin" class="ad-label">LinkedIn</label>
+                        <input type="url" id="social_linkedin" name="social_linkedin" class="ad-input"
+                            value="{{ $settings['social_linkedin'] ?? '' }}"
+                            placeholder="https://linkedin.com/company/tokokamu">
                     </div>
                 </section>
             </div>
 
-            <!-- MENU SIDEBAR -->
+            <!-- HALAMAN SHOP -->
             <div class="col-xl-6 col-xxl-4">
                 <section class="form-card form-card--compact h-100">
                     <div class="form-card-head">
-                        <h2>Nama Menu Sidebar</h2>
-                        <p>Kosongkan untuk memakai nama bawaan.</p>
+                        <h2>Halaman Shop</h2>
+                        <p>Judul yang dilihat pengunjung di halaman belanja.</p>
                     </div>
                     <div class="ad-field">
-                        <label for="admin_btn_manage_products" class="ad-label">Menu Produk</label>
-                        <input type="text" id="admin_btn_manage_products" name="admin_btn_manage_products" class="ad-input"
-                            value="{{ $settings['admin_btn_manage_products'] ?? '' }}"
-                            placeholder="{{ $menuDefaults['admin_btn_manage_products'] ?? '' }}">
+                        <label for="shop_page_title" class="ad-label">Judul Tab Browser</label>
+                        <input type="text" id="shop_page_title" name="shop_page_title" class="ad-input"
+                            value="{{ $settings['shop_page_title'] ?? 'Shop - Furni' }}">
                     </div>
                     <div class="ad-field">
-                        <label for="admin_btn_manage_orders" class="ad-label">Menu Pesanan</label>
-                        <input type="text" id="admin_btn_manage_orders" name="admin_btn_manage_orders" class="ad-input"
-                            value="{{ $settings['admin_btn_manage_orders'] ?? '' }}"
-                            placeholder="{{ $menuDefaults['admin_btn_manage_orders'] ?? '' }}">
-                    </div>
-                    <div class="ad-field">
-                        <label for="admin_btn_cms_settings" class="ad-label">Menu Pengaturan</label>
-                        <input type="text" id="admin_btn_cms_settings" name="admin_btn_cms_settings" class="ad-input"
-                            value="{{ $settings['admin_btn_cms_settings'] ?? '' }}"
-                            placeholder="{{ $menuDefaults['admin_btn_cms_settings'] ?? '' }}">
+                        <label for="shop_hero_title" class="ad-label">Judul Banner</label>
+                        <input type="text" id="shop_hero_title" name="shop_hero_title" class="ad-input"
+                            value="{{ $settings['shop_hero_title'] ?? 'Shop' }}">
+                        <small class="ad-hint">Tulisan besar di bagian atas halaman Shop.</small>
                     </div>
                 </section>
             </div>
 
-            <!-- KARTU STATISTIK -->
+            <!-- INVOICE -->
             <div class="col-xl-6 col-xxl-4">
                 <section class="form-card form-card--compact h-100">
                     <div class="form-card-head">
-                        <h2>Label Kartu Statistik</h2>
-                        <p>Judul kecil di tiap kartu angka pada dashboard.</p>
+                        <h2>Invoice</h2>
+                        <p>Identitas toko yang tercetak di invoice pesanan.</p>
                     </div>
                     <div class="ad-field">
-                        <label for="admin_card_total_products" class="ad-label">Kartu Produk</label>
-                        <input type="text" id="admin_card_total_products" name="admin_card_total_products" class="ad-input"
-                            value="{{ $settings['admin_card_total_products'] ?? 'Total Produk' }}">
+                        <label for="invoice_company" class="ad-label">Nama Usaha</label>
+                        <input type="text" id="invoice_company" name="invoice_company" class="ad-input"
+                            value="{{ $settings['invoice_company'] ?? '' }}"
+                            placeholder="{{ $settings['brand_name'] ?? 'Furni' }}">
+                        <small class="ad-hint">Kosongkan untuk memakai nama brand.</small>
                     </div>
                     <div class="ad-field">
-                        <label for="admin_card_total_orders" class="ad-label">Kartu Pesanan</label>
-                        <input type="text" id="admin_card_total_orders" name="admin_card_total_orders" class="ad-input"
-                            value="{{ $settings['admin_card_total_orders'] ?? 'Total Pesanan' }}">
-                    </div>
-                    <div class="ad-field">
-                        <label for="admin_card_total_revenue" class="ad-label">Kartu Pendapatan</label>
-                        <input type="text" id="admin_card_total_revenue" name="admin_card_total_revenue" class="ad-input"
-                            value="{{ $settings['admin_card_total_revenue'] ?? 'Pendapatan (Paid)' }}">
-                    </div>
-                </section>
-            </div>
-
-            <!-- TABEL PESANAN TERBARU -->
-            <div class="col-xl-6 col-xxl-4">
-                <section class="form-card form-card--compact h-100">
-                    <div class="form-card-head">
-                        <h2>Tabel Pesanan Terbaru</h2>
-                        <p>Judul, tautan, dan pesan kosong tabel di dashboard.</p>
-                    </div>
-                    <div class="ad-field">
-                        <label for="admin_recent_orders_title" class="ad-label">Judul Tabel</label>
-                        <input type="text" id="admin_recent_orders_title" name="admin_recent_orders_title" class="ad-input"
-                            value="{{ $settings['admin_recent_orders_title'] ?? 'Pesanan Terbaru Masuk' }}">
-                    </div>
-                    <div class="ad-field">
-                        <label for="admin_link_view_all_orders" class="ad-label">Teks Tautan "Lihat Semua"</label>
-                        <input type="text" id="admin_link_view_all_orders" name="admin_link_view_all_orders" class="ad-input"
-                            value="{{ $settings['admin_link_view_all_orders'] ?? 'Lihat Semua Pesanan' }}">
-                    </div>
-                    <div class="ad-field">
-                        <label for="admin_empty_orders" class="ad-label">Teks Data Kosong</label>
-                        <input type="text" id="admin_empty_orders" name="admin_empty_orders" class="ad-input"
-                            value="{{ $settings['admin_empty_orders'] ?? 'Belum ada pesanan masuk.' }}">
-                    </div>
-                </section>
-            </div>
-
-            <!-- HEADER KOLOM -->
-            <div class="col-xl-6 col-xxl-4">
-                <section class="form-card form-card--compact h-100">
-                    <div class="form-card-head">
-                        <h2>Header Kolom Tabel</h2>
-                        <p>Nama kolom pada tabel pesanan terbaru.</p>
+                        <label for="invoice_address" class="ad-label">Alamat Toko</label>
+                        <textarea id="invoice_address" name="invoice_address" class="ad-input" rows="3"
+                            maxlength="255">{{ $settings['invoice_address'] ?? '' }}</textarea>
                     </div>
                     <div class="row">
                         <div class="col-sm-6 ad-field">
-                            <label for="admin_th_order_id" class="ad-label">ID Order</label>
-                            <input type="text" id="admin_th_order_id" name="admin_th_order_id" class="ad-input"
-                                value="{{ $settings['admin_th_order_id'] ?? 'ID Order' }}">
+                            <label for="invoice_phone" class="ad-label">Telepon</label>
+                            <input type="text" id="invoice_phone" name="invoice_phone" class="ad-input"
+                                value="{{ $settings['invoice_phone'] ?? '' }}">
                         </div>
                         <div class="col-sm-6 ad-field">
-                            <label for="admin_th_customer" class="ad-label">Pemesan</label>
-                            <input type="text" id="admin_th_customer" name="admin_th_customer" class="ad-input"
-                                value="{{ $settings['admin_th_customer'] ?? 'Pemesan' }}">
+                            <label for="invoice_email" class="ad-label">Email</label>
+                            <input type="email" id="invoice_email" name="invoice_email" class="ad-input"
+                                value="{{ $settings['invoice_email'] ?? '' }}">
                         </div>
-                        <div class="col-sm-6 ad-field">
-                            <label for="admin_th_total_price" class="ad-label">Total Harga</label>
-                            <input type="text" id="admin_th_total_price" name="admin_th_total_price" class="ad-input"
-                                value="{{ $settings['admin_th_total_price'] ?? 'Total Harga' }}">
-                        </div>
-                        <div class="col-sm-6 ad-field">
-                            <label for="admin_th_status" class="ad-label">Status</label>
-                            <input type="text" id="admin_th_status" name="admin_th_status" class="ad-input"
-                                value="{{ $settings['admin_th_status'] ?? 'Status' }}">
-                        </div>
-                        <div class="col-sm-6 ad-field">
-                            <label for="admin_th_date" class="ad-label">Tanggal</label>
-                            <input type="text" id="admin_th_date" name="admin_th_date" class="ad-input"
-                                value="{{ $settings['admin_th_date'] ?? 'Tanggal' }}">
-                        </div>
+                    </div>
+                    <div class="ad-field">
+                        <label for="invoice_payment_info" class="ad-label">Informasi Pembayaran</label>
+                        <textarea id="invoice_payment_info" name="invoice_payment_info" class="ad-input" rows="3"
+                            maxlength="255"
+                            placeholder="BCA 1234567890 a.n. Nama Toko">{{ $settings['invoice_payment_info'] ?? '' }}</textarea>
+                        <small class="ad-hint">Tampil di invoice yang belum lunas.</small>
+                    </div>
+                    <div class="ad-field">
+                        <label for="invoice_note" class="ad-label">Catatan Kaki</label>
+                        <input type="text" id="invoice_note" name="invoice_note" class="ad-input" maxlength="255"
+                            value="{{ $settings['invoice_note'] ?? '' }}" placeholder="Terima kasih telah berbelanja!">
                     </div>
                 </section>
             </div>
-
 
             <!-- WARNA TAMPILAN WEBSITE -->
             @if(!empty($themeGroups))
@@ -224,7 +212,8 @@
                                                         <input type="text" id="{{ $key }}" name="{{ $key }}" class="ad-input theme-hex"
                                                             value="{{ $settings[$key] ?? '' }}" placeholder="{{ $field['default'] }}"
                                                             maxlength="7" autocomplete="off" spellcheck="false"
-                                                            pattern="#[0-9a-fA-F]{6}" title="Kode warna 6 digit, contoh: {{ $field['default'] }}">
+                                                            pattern="#[0-9a-fA-F]{6}"
+                                                            title="Kode warna 6 digit, contoh: {{ $field['default'] }}">
                                                         <button type="button" class="theme-reset" title="Kembalikan ke warna bawaan"
                                                             aria-label="Kembalikan {{ $field['label'] }} ke warna bawaan">
                                                             <i class="fa fa-rotate-left" aria-hidden="true"></i>
@@ -260,22 +249,26 @@
                                         <div class="tp-footer">
                                             <div class="tp-logo">{{ $settings['brand_name'] ?? 'Furni' }}.</div>
                                             <p>Deskripsi singkat toko di bagian footer.</p>
-                                            <div class="tp-links"><span>About us</span><span>Services</span><span>Blog</span></div>
+                                            <div class="tp-links"><span>About us</span><span>Services</span><span>Blog</span>
+                                            </div>
                                             <div class="tp-social"><b></b><b></b><b></b></div>
                                         </div>
                                     </div>
-                                    <small class="ad-hint">Pratinjau berubah langsung saat warna diganti. Tersimpan setelah klik "Simpan Perubahan CMS".</small>
+                                    <small class="ad-hint">Pratinjau berubah langsung saat warna diganti. Tersimpan setelah klik
+                                        "Simpan Perubahan CMS".</small>
                                 </div>
                             </div>
                         </div>
                     </section>
                 </div>
             @endif
+
         </div>
 
+        <!-- BAR SIMPAN -->
         <div class="savebar">
             <p>Perubahan langsung tampil di website setelah disimpan.</p>
-            <button type="submit" class="btn-submit">Simpan Perubahan CMS</button>
+            <button type="submit" class="btn-submit">Simpan Perubahan</button>
         </div>
     </form>
 @endsection
