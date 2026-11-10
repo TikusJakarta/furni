@@ -129,9 +129,9 @@
                         @php $meta = $statusMeta[$order->status] ?? [$order->status, 'status-other']; @endphp
                         <tr>
                             <td class="muted">{{ $order->created_at->format('d M Y, H:i') }}</td>
-                            <td class="order-id">#{{ $order->id }}</td>
-                            <td class="cell-main">{{ trim($order->first_name . ' ' . $order->last_name) ?: (optional($order->user)->name ?? '-') }}</td>
-                            <td class="num">{{ (int) $order->items_qty }}</td>
+                            <td class="order-id">#{{ $order->order_id }}</td>
+                            <td class="cell-main">{{ $order->customer_name ?: '-' }}</td>
+                            <td class="num">{{ $order->items_qty }}</td>
                             <td class="num">Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</td>
                             <td class="num"><strong>Rp {{ number_format($order->total_price, 0, ',', '.') }}</strong></td>
                             <td><span class="status-badge {{ $meta[1] }}">{{ $meta[0] }}</span></td>
@@ -177,7 +177,7 @@
                     @forelse($products as $product)
                         <tr>
                             <td class="muted">{{ $loop->iteration }}</td>
-                            <td class="cell-main">{{ $product->name }}</td>
+                            <td class="cell-main">{{ $product->product_name }}</td>
                             <td class="num">{{ number_format($product->qty, 0, ',', '.') }}</td>
                             <td class="num">Rp {{ number_format($product->revenue, 0, ',', '.') }}</td>
                         </tr>

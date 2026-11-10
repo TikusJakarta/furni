@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
-use App\Models\Product;
+use App\Models\ProductSale;
+use App\Models\SalesReport;
+use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -16,14 +15,14 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 /**
- * Laporan penjualan: tampil sebagai tabel di halaman admin, dan query yang sama
- * dipakai untuk diunduh sebagai file Excel (PhpOffice/PhpSpreadsheet).
- * Simpan di: app/Http/Controllers/ReportController.php
+ * Laporan penjualan. Data diolah lebih dulu di "view table" database
+ * (v_sales_report dan v_product_sales, dibuat oleh migration create_report_views);
+ * controller ini hanya menyaring view itu dengan tanggal/status, lalu menampilkannya
+ * sebagai tabel atau mengunduhnya sebagai Excel (PhpOffice/PhpSpreadsheet).
  */
 class ReportController extends Controller
 {
-    private const PAID_STATUSES = ['paid', 'packing', 'shipping', 'shipped', 'completed'];
-
+    /** status => [label, kelas badge] */
     private const STATUSES = [
         'pending'    => ['Belum Bayar',      'status-unpaid'],
         'verifikasi' => ['Verifikasi',       'status-verify'],
@@ -35,28 +34,21 @@ class ReportController extends Controller
         'cancelled'  => ['Dibatalkan',       'status-other'],
     ];
 
-    // Halaman laporan (tabel di layar)
+    // Halaman laporan
     public function sales(Request $request)
     {
         [$from, $to, $status] = $this->filters($request);
 
-        $query = $this->ordersQuery($from, $to, $status);
-
-        $orders = (clone $query)
-            ->with('user')
-            ->withSum('orderItems as items_qty', 'quantity')
-            ->latest()
+        $orders = $this->salesQuery($from, $to, $status)
+            ->orderByDesc('created_at')
             ->paginate(20)
             ->onEachSide(1)
             ->withQueryString();
 
-        $summary  = $this->summary($query);
-        $products = $this->productsSold($query);
-
         return view('admin.reports.sales', [
             'orders'      => $orders,
-            'summary'     => $summary,
-            'products'    => $products,
+            'summary'     => $this->summary($from, $to, $status),
+            'products'    => $this->productsSold($from, $to, $status),
             'from'        => $from,
             'to'          => $to,
             'status'      => $status,
@@ -65,23 +57,23 @@ class ReportController extends Controller
         ]);
     }
 
-    // Unduh Excel: memakai filter dan query yang sama dengan halaman di atas
+    // Unduh Excel: memakai filter dan view yang sama dengan halaman di atas
     public function salesExport(Request $request)
     {
         [$from, $to, $status] = $this->filters($request);
 
-        $query = $this->ordersQuery($from, $to, $status);
-
-        $orders = (clone $query)
-            ->with('user')
-            ->withSum('orderItems as items_qty', 'quantity')
+        $orders = $this->salesQuery($from, $to, $status)
             ->orderBy('created_at')
             ->get();
 
-        $summary  = $this->summary($query);
-        $products = $this->productsSold($query);
-
-        $spreadsheet = $this->buildWorkbook($orders, $products, $summary, $from, $to, $this->statusLabel($status));
+        $spreadsheet = $this->buildWorkbook(
+            $orders,
+            $this->productsSold($from, $to, $status),
+            $this->summary($from, $to, $status),
+            $from,
+            $to,
+            $this->statusLabel($status)
+        );
 
         $filename = 'laporan-penjualan_' . $from->format('Ymd') . '-' . $to->format('Ymd') . '.xlsx';
 
@@ -94,6 +86,9 @@ class ReportController extends Controller
         ]);
     }
 
+    // Query ke view database (satu tempat untuk tabel di layar dan file Excel)
+
+    /** Membaca & memvalidasi filter: [dari, sampai, status]. Bawaan: bulan ini, hanya yang sudah dibayar. */
     private function filters(Request $request): array
     {
         $request->validate([
@@ -110,50 +105,54 @@ class ReportController extends Controller
         return [$from, $to, $status];
     }
 
-    private function ordersQuery(Carbon $from, Carbon $to, string $status)
+    /** Pesanan pada view v_sales_report yang masuk filter */
+    private function salesQuery(Carbon $from, Carbon $to, string $status)
     {
-        return Order::query()
+        return SalesReport::query()
             ->whereBetween('created_at', [$from, $to])
             ->when($status === 'paid_group', function ($query) {
-                $query->whereIn('status', self::PAID_STATUSES);
+                $query->where('is_paid', 1);
             })
             ->when(! in_array($status, ['all', 'paid_group'], true), function ($query) use ($status) {
                 $query->where('status', $status);
             });
     }
 
-    /** Angka ringkasan untuk kartu di atas tabel */
-    private function summary($ordersQuery): array
+    /** Angka ringkasan: satu query agregat ke view */
+    private function summary(Carbon $from, Carbon $to, string $status): array
     {
-        $itemTable = (new Order)->items()->getRelated()->getTable();
+        $row = $this->salesQuery($from, $to, $status)
+            ->selectRaw('COUNT(*) AS orders, COALESCE(SUM(total_price), 0) AS revenue, COALESCE(SUM(shipping_cost), 0) AS shipping, COALESCE(SUM(items_qty), 0) AS items')
+            ->toBase()
+            ->first();
 
-        $orders  = (clone $ordersQuery)->count();
-        $revenue = (clone $ordersQuery)->sum('total_price');
+        $orders  = (int) $row->orders;
+        $revenue = (float) $row->revenue;
 
         return [
             'orders'   => $orders,
             'revenue'  => $revenue,
-            'shipping' => (clone $ordersQuery)->sum('shipping_cost'),
+            'shipping' => (float) $row->shipping,
+            'items'    => (int) $row->items,
             'average'  => $orders > 0 ? $revenue / $orders : 0,
-            'items'    => DB::table($itemTable)
-                ->whereIn('order_id', (clone $ordersQuery)->select('id'))
-                ->sum('quantity'),
         ];
     }
 
-    private function productsSold($ordersQuery)
+    /** Rekap produk terjual: dikelompokkan dari view v_product_sales dengan filter yang sama */
+    private function productsSold(Carbon $from, Carbon $to, string $status)
     {
-        $items    = (new Order)->items()->getRelated()->getTable();
-        $products = (new Product)->getTable();
-
-        $price = Schema::hasColumn($items, 'price') ? "$items.price" : "$products.price";
-
-        return DB::table($items)
-            ->join($products, "$products.id", '=', "$items.product_id")
-            ->whereIn("$items.order_id", (clone $ordersQuery)->select('id'))
-            ->selectRaw("$products.id, $products.name, SUM($items.quantity) as qty, SUM($items.quantity * $price) as revenue")
-            ->groupBy("$products.id", "$products.name")
+        return ProductSale::query()
+            ->whereBetween('created_at', [$from, $to])
+            ->when($status === 'paid_group', function ($query) {
+                $query->where('is_paid', 1);
+            })
+            ->when(! in_array($status, ['all', 'paid_group'], true), function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->selectRaw('product_id, product_name, SUM(quantity) AS qty, SUM(line_total) AS revenue')
+            ->groupBy('product_id', 'product_name')
             ->orderByDesc('qty')
+            ->toBase()
             ->get();
     }
 
@@ -173,14 +172,15 @@ class ReportController extends Controller
     // File Excel
     private function buildWorkbook($orders, $products, array $summary, Carbon $from, Carbon $to, string $statusLabel): Spreadsheet
     {
-        $company = \App\Models\Setting::where('key', 'invoice_company')->value('value')
-            ?: (\App\Models\Setting::where('key', 'brand_name')->value('value') ?: 'Furni');
+        $company = Setting::where('key', 'invoice_company')->value('value')
+            ?: (Setting::where('key', 'brand_name')->value('value') ?: 'Furni');
 
         $period = $from->format('d M Y') . ' - ' . $to->format('d M Y');
         $money  = '"Rp" #,##0';
 
         $spreadsheet = new Spreadsheet();
 
+        // ==== PENJUALAN ====
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Penjualan');
 
@@ -213,7 +213,7 @@ class ReportController extends Controller
         }
 
         // Tabel pesanan
-        $header = $row + 1;
+        $header  = $row + 1;
         $columns = ['No', 'Tanggal', 'No. Pesanan', 'Pelanggan', 'Item', 'Ongkir', 'Total', 'Status'];
 
         foreach ($columns as $i => $title) {
@@ -226,12 +226,10 @@ class ReportController extends Controller
         $r = $first;
 
         foreach ($orders as $i => $order) {
-            $customer = trim($order->first_name . ' ' . $order->last_name) ?: (optional($order->user)->name ?? '-');
-
             $sheet->setCellValue("A$r", $i + 1);
             $sheet->setCellValue("B$r", ExcelDate::PHPToExcel($order->created_at));
-            $sheet->setCellValue("C$r", '#' . $order->id);
-            $sheet->setCellValue("D$r", $customer);
+            $sheet->setCellValue("C$r", '#' . $order->order_id);
+            $sheet->setCellValue("D$r", $order->customer_name ?: '-');
             $sheet->setCellValue("E$r", (int) $order->items_qty);
             $sheet->setCellValue("F$r", (float) $order->shipping_cost);
             $sheet->setCellValue("G$r", (float) $order->total_price);
@@ -251,7 +249,7 @@ class ReportController extends Controller
             $sheet->getStyle("A$first:A$last")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle("E$first:E$last")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-            // Baris total 
+            // Baris total (rumus Excel, ikut berubah kalau data disaring di Excel)
             $total = $last + 1;
             $sheet->setCellValue("D$total", 'TOTAL');
             $sheet->setCellValue("E$total", "=SUM(E$first:E$last)");
@@ -275,7 +273,7 @@ class ReportController extends Controller
 
         $sheet->freezePane('A' . $first);
 
-        // ====== PRODUK TERJUAL =======
+        // ===== PRODUK TERJUAL =====
         $sheet2 = $spreadsheet->createSheet();
         $sheet2->setTitle('Produk Terjual');
 
@@ -295,7 +293,7 @@ class ReportController extends Controller
 
         foreach ($products as $i => $product) {
             $sheet2->setCellValue("A$r2", $i + 1);
-            $sheet2->setCellValue("B$r2", $product->name);
+            $sheet2->setCellValue("B$r2", $product->product_name);
             $sheet2->setCellValue("C$r2", (int) $product->qty);
             $sheet2->setCellValue("D$r2", (float) $product->revenue);
             $r2++;

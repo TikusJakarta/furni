@@ -87,9 +87,6 @@ class OrderController extends Controller
         return view('order.pay', compact('order'));
     }
 
-    /**
-     * 3. Fungsi untuk memproses upload bukti transfer bank (Maks. 8MB)
-     */
     public function uploadProof(Request $request, $orderId)
 {
     $request->validate([
@@ -108,7 +105,6 @@ class OrderController extends Controller
             $order->proof_of_payment = 'uploads/proofs/' . $filename;
         }
 
-        // Karena transfer bank, ubah status ke 'verifikasi' untuk dicek admin
         $order->status = 'verifikasi';
         $order->save();
 

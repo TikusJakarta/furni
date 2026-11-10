@@ -13,6 +13,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\OrderReturnController;
+use App\Http\Controllers\ReportController;
 
 // RUTE PUBLIK
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -120,6 +121,11 @@ Route::middleware(['auth'])->group(function () {
 
         // Logout Admin (Menggunakan AdminController@logout yang mengarah ke admin login)
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+
+
+    // Laporan
+        Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+        Route::get('/reports/sales/export', [ReportController::class, 'salesExport'])->name('reports.sales.export');
     });
 
     // RUTE KHUSUS SUPER ADMIN
@@ -131,4 +137,5 @@ Route::middleware(['auth'])->group(function () {
         // audit logs
         Route::get('/activity-logs', [AdminController::class, 'activityLogsIndex'])->name('activity-logs.index');
     });
+
 });

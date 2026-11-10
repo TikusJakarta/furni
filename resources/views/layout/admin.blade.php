@@ -83,6 +83,11 @@
                 'label' => 'Pengaturan', 'icon' => 'fa-cogs',
                 'route' => 'admin.settings.index', 'match' => ['admin.settings.*'],
             ],
+            [
+                'label' => 'Laporan', 'icon' => 'fa-chart-line',
+                'route' => 'admin.reports.sales', 'match' => ['admin.reports.*'],
+            ],
+
         ];
 
         // Sembunyikan menu yang tidak boleh dilihat role yang sedang login
