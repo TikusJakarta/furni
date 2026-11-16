@@ -40,6 +40,7 @@
             </div>
         </header>
 
+        <!-- INFORMASI -->
         <section class="inv-meta">
             <div class="inv-box">
                 <h2>Ditagihkan kepada</h2>
@@ -69,6 +70,7 @@
             </div>
         </section>
 
+        <!-- DAFTAR PRODUK -->
         <table class="inv-table">
             <thead>
                 <tr>
@@ -96,6 +98,7 @@
             </tbody>
         </table>
 
+        <!-- TOTAL -->
         <section class="inv-bottom">
             <div class="inv-notes">
                 @if(! $isPaid && $paymentInfo && $order->status !== 'cancelled')
@@ -113,6 +116,18 @@
                     <td>Subtotal Produk</td>
                     <td>Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
                 </tr>
+
+                <tr class="is-total">
+                    <td>Total</td>
+                    <td>Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
+                </tr>
+
+                @if(isset($discount) && $discount > 0)
+                    <tr class="is-discount">
+                        <td>Diskon / Kupon</td>
+                        <td>&minus; Rp {{ number_format($discount, 0, ',', '.') }}</td>
+                    </tr>
+                @endif
                 
                 <tr>
                     <td>PPN (12%)</td>
@@ -131,15 +146,8 @@
                     <td>Rp {{ number_format($shipping, 0, ',', '.') }}</td>
                 </tr>
 
-                @if(isset($discount) && $discount > 0)
-                    <tr class="is-discount">
-                        <td>Diskon / Kupon</td>
-                        <td>&minus; Rp {{ number_format($discount, 0, ',', '.') }}</td>
-                    </tr>
-                @endif
-
                 <tr class="is-total">
-                    <td>Total</td>
+                    <td>Grand Total Akhir</td>
                     <td>Rp {{ number_format($total, 0, ',', '.') }}</td>
                 </tr>
             </table>

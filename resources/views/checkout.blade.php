@@ -321,13 +321,9 @@
                                                 </td>
                                             </tr>
 
-                                            <!-- BARIS PPN 12% -->
-                                            <tr>
-                                                <td class="text-black font-weight-bold"><strong>PPN (12%)</strong></td>
-                                                <td class="text-black text-end" id="tax-text"
-                                                    data-tax="{{ $tax ?? 0 }}">Rp
-                                                    {{ number_format($tax ?? 0, 0, ',', '.') }}
-                                                </td>
+                                            <tr class="fw-bold text-black">
+                                                <td><strong>Total</strong></td>
+                                                <td class="text-end"><strong>Rp {{ number_format($subtotal ?? 0, 0, ',', '.') }}</strong></td>
                                             </tr>
 
                                             @if(isset($discount) && $discount > 0)
@@ -337,6 +333,15 @@
                                                             {{ number_format($discount, 0, ',', '.') }}</strong></td>
                                                 </tr>
                                             @endif
+
+                                            <!-- BARIS PPN 12% -->
+                                            <tr>
+                                                <td class="text-black font-weight-bold"><strong>PPN (12%)</strong></td>
+                                                <td class="text-black text-end" id="tax-text"
+                                                    data-tax="{{ $tax ?? 0 }}">Rp
+                                                    {{ number_format($tax ?? 0, 0, ',', '.') }}
+                                                </td>
+                                            </tr>
 
                                             <tr>
                                                 <td class="text-black font-weight-bold"><strong>Shipping Cost</strong></td>

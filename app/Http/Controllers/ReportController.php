@@ -34,6 +34,11 @@ class ReportController extends Controller
         'cancelled'  => ['Dibatalkan',       'status-other'],
     ];
 
+    // Warna tema Excel
+    private const COLOR_PRIMARY = '3B5D50';
+    private const COLOR_SOFT    = 'EAF1ED';
+    private const COLOR_BORDER  = 'D5DED9';
+
     // Halaman laporan
     public function sales(Request $request)
     {
@@ -176,59 +181,105 @@ class ReportController extends Controller
             ?: (Setting::where('key', 'brand_name')->value('value') ?: 'Furni');
 
         $period = $from->format('d M Y') . ' - ' . $to->format('d M Y');
-        $money  = '"Rp" #,##0';
+
+        // Nominal uang disimpan sebagai angka mentah (tanpa "Rp" / pemisah ribuan)
+        // supaya mudah diurutkan, dijumlahkan, dan dipakai ulang di Excel.
+        $raw = '0';
 
         $spreadsheet = new Spreadsheet();
 
-        // ==== PENJUALAN ====
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Penjualan');
+        // ===================== SHEET 1: RINGKASAN =====================
+        $sum = $spreadsheet->getActiveSheet();
+        $sum->setTitle('Ringkasan');
+        $sum->setShowGridlines(false);
 
-        $sheet->setCellValue('A1', 'Laporan Penjualan - ' . $company);
-        $sheet->mergeCells('A1:H1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+        $sum->setCellValue('A1', 'Laporan Penjualan - ' . $company);
+        $sum->mergeCells('A1:C1');
+        $sum->getStyle('A1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB(self::COLOR_PRIMARY);
+        $sum->getRowDimension(1)->setRowHeight(26);
 
-        $sheet->setCellValue('A2', 'Periode: ' . $period);
-        $sheet->setCellValue('A3', 'Status: ' . $statusLabel);
-        $sheet->setCellValue('A4', 'Dibuat: ' . now()->format('d M Y H:i') . ' oleh ' . optional(auth()->user())->name);
+        $sum->setCellValue('A2', 'Periode');
+        $sum->setCellValue('B2', $period);
+        $sum->setCellValue('A3', 'Status');
+        $sum->setCellValue('B3', $statusLabel);
+        $sum->setCellValue('A4', 'Dibuat');
+        $sum->setCellValue('B4', now()->format('d M Y H:i') . ' oleh ' . (optional(auth()->user())->name ?: '-'));
+        $sum->getStyle('A2:A4')->getFont()->setBold(true);
+        $sum->getStyle('A2:B4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-        // Ringkasan
+        $sum->setCellValue('A6', 'Keterangan');
+        $sum->setCellValue('B6', 'Nilai');
+        $this->styleHeader($sum, 'A6:B6');
+
         $summaryRows = [
-            ['Jumlah pesanan',        $summary['orders'],   '#,##0'],
-            ['Total pendapatan',      $summary['revenue'],  $money],
-            ['Total ongkos kirim',    $summary['shipping'], $money],
-            ['Rata-rata per pesanan', $summary['average'],  $money],
-            ['Item terjual',          $summary['items'],    '#,##0'],
+            ['Jumlah pesanan',          $summary['orders'],   '#,##0'],
+            ['Total pendapatan (Rp)',   $summary['revenue'],  $raw],
+            ['Total ongkos kirim (Rp)', $summary['shipping'], $raw],
+            ['Rata-rata per pesanan (Rp)', round($summary['average']), $raw],
+            ['Item terjual',            $summary['items'],    '#,##0'],
         ];
 
-        $row = 6;
+        $row = 7;
         foreach ($summaryRows as [$label, $value, $format]) {
-            $sheet->setCellValue("A$row", $label);
-            $sheet->mergeCells("A$row:C$row");
-            $sheet->setCellValue("D$row", $value);
-            $sheet->getStyle("D$row")->getNumberFormat()->setFormatCode($format);
-            $sheet->getStyle("D$row")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle("A$row")->getFont()->setBold(true);
+            $sum->setCellValue("A$row", $label);
+            $sum->setCellValue("B$row", $value);
+            $sum->getStyle("B$row")->getNumberFormat()->setFormatCode($format);
+            $sum->getStyle("B$row")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sum->getStyle("A$row")->getFont()->setBold(true);
+
+            if ($row % 2 === 0) {
+                $sum->getStyle("A$row:B$row")->getFill()
+                    ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB(self::COLOR_SOFT);
+            }
+
             $row++;
         }
 
-        // Tabel pesanan
-        $header  = $row + 1;
-        $columns = ['No', 'Tanggal', 'No. Pesanan', 'Pelanggan', 'Item', 'Ongkir', 'Total', 'Status'];
+        $this->styleBody($sum, 'A7:B' . ($row - 1));
+
+        $sum->getColumnDimension('A')->setWidth(30);
+        $sum->getColumnDimension('B')->setWidth(34);
+        $sum->getColumnDimension('C')->setWidth(4);
+
+        // ===================== SHEET 2: PENJUALAN =====================
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle('Penjualan');
+        $sheet->setShowGridlines(false);
+
+        $sheet->setCellValue('A1', 'Daftar Pesanan - ' . $company);
+        $sheet->mergeCells('A1:H1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB(self::COLOR_PRIMARY);
+        $sheet->getRowDimension(1)->setRowHeight(26);
+        $sheet->setCellValue('A2', 'Periode: ' . $period . '  |  Status: ' . $statusLabel);
+        $sheet->setCellValue('A3', 'Klik panah pada judul kolom untuk mengurutkan (kecil ke besar / besar ke kecil) atau menyaring data.');
+        $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(9)->getColor()->setRGB('7A8A83');
+
+        $header  = 5;
+        $columns = ['No', 'Tanggal', 'No. Pesanan', 'Pelanggan', 'Item', 'Ongkir (Rp)', 'Total (Rp)', 'Status'];
 
         foreach ($columns as $i => $title) {
             $sheet->setCellValue(chr(65 + $i) . $header, $title);
         }
 
         $this->styleHeader($sheet, "A$header:H$header");
+        $sheet->getRowDimension($header)->setRowHeight(22);
 
         $first = $header + 1;
         $r = $first;
 
-        foreach ($orders as $i => $order) {
-            $sheet->setCellValue("A$r", $i + 1);
+        foreach ($orders as $order) {
+            // Nomor urut berupa rumus supaya tetap 1,2,3... setelah data diurutkan
+            $sheet->setCellValue("A$r", '=ROW()-ROW($A$' . $header . ')');
             $sheet->setCellValue("B$r", ExcelDate::PHPToExcel($order->created_at));
-            $sheet->setCellValue("C$r", '#' . $order->order_id);
+
+            // No. pesanan disimpan sebagai angka bila memang angka, agar urutannya benar
+            if (is_numeric($order->order_id)) {
+                $sheet->setCellValue("C$r", (int) $order->order_id);
+                $sheet->getStyle("C$r")->getNumberFormat()->setFormatCode('"#"0');
+            } else {
+                $sheet->setCellValue("C$r", '#' . $order->order_id);
+            }
+
             $sheet->setCellValue("D$r", $order->customer_name ?: '-');
             $sheet->setCellValue("E$r", (int) $order->items_qty);
             $sheet->setCellValue("F$r", (float) $order->shipping_cost);
@@ -242,57 +293,72 @@ class ReportController extends Controller
         if ($orders->isEmpty()) {
             $sheet->setCellValue("A$first", 'Tidak ada pesanan pada periode ini.');
             $sheet->mergeCells("A$first:H$first");
+            $sheet->getStyle("A$first")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $last = $first;
         } else {
             $sheet->getStyle("B$first:B$last")->getNumberFormat()->setFormatCode('dd/mm/yyyy hh:mm');
-            $sheet->getStyle("F$first:G$last")->getNumberFormat()->setFormatCode($money);
+            $sheet->getStyle("F$first:G$last")->getNumberFormat()->setFormatCode($raw);
             $sheet->getStyle("A$first:A$last")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("B$first:C$last")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $sheet->getStyle("E$first:E$last")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F$first:G$last")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle("H$first:H$last")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-            // Baris total (rumus Excel, ikut berubah kalau data disaring di Excel)
-            $total = $last + 1;
+            // Baris total memakai SUBTOTAL: hanya menjumlah baris yang tampil, jadi ikut berubah saat difilter.
+            // Dipisah satu baris kosong dari data supaya tidak ikut terurut saat sort.
+            $total = $last + 2; // sisakan 1 baris kosong di atasnya agar TOTAL tidak ikut terurut saat sort
+            $sheet->getRowDimension($last + 1)->setRowHeight(6);
             $sheet->setCellValue("D$total", 'TOTAL');
-            $sheet->setCellValue("E$total", "=SUM(E$first:E$last)");
-            $sheet->setCellValue("F$total", "=SUM(F$first:F$last)");
-            $sheet->setCellValue("G$total", "=SUM(G$first:G$last)");
-            $sheet->getStyle("F$total:G$total")->getNumberFormat()->setFormatCode($money);
+            $sheet->setCellValue("E$total", "=SUBTOTAL(109,E$first:E$last)");
+            $sheet->setCellValue("F$total", "=SUBTOTAL(109,F$first:F$last)");
+            $sheet->setCellValue("G$total", "=SUBTOTAL(109,G$first:G$last)");
+            $sheet->getStyle("F$total:G$total")->getNumberFormat()->setFormatCode($raw);
+            $sheet->getStyle("D$total")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->getStyle("E$total")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("F$total:G$total")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->getStyle("A$total:H$total")->applyFromArray([
                 'font'    => ['bold' => true],
-                'borders' => ['top' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '3B5D50']]],
+                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COLOR_SOFT]],
+                'borders' => ['top' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => self::COLOR_PRIMARY]]],
             ]);
 
+            // Tombol sort/filter di setiap judul kolom
             $sheet->setAutoFilter("A$header:H$last");
         }
 
         $this->styleBody($sheet, "A$first:H$last");
 
-        foreach (['A' => 6, 'B' => 18, 'C' => 14, 'D' => 30, 'E' => 8, 'F' => 18, 'G' => 20, 'H' => 18] as $col => $width) {
+        foreach (['A' => 6, 'B' => 18, 'C' => 14, 'D' => 30, 'E' => 8, 'F' => 16, 'G' => 18, 'H' => 18] as $col => $width) {
             $sheet->getColumnDimension($col)->setWidth($width);
         }
 
         $sheet->freezePane('A' . $first);
 
-        // ===== PRODUK TERJUAL =====
+        // ===================== SHEET 3: PRODUK TERJUAL =====================
         $sheet2 = $spreadsheet->createSheet();
         $sheet2->setTitle('Produk Terjual');
+        $sheet2->setShowGridlines(false);
 
         $sheet2->setCellValue('A1', 'Produk Terjual - ' . $company);
         $sheet2->mergeCells('A1:D1');
-        $sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(16);
-        $sheet2->setCellValue('A2', 'Periode: ' . $period . ' | Status: ' . $statusLabel);
+        $sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB(self::COLOR_PRIMARY);
+        $sheet2->getRowDimension(1)->setRowHeight(26);
+        $sheet2->setCellValue('A2', 'Periode: ' . $period . '  |  Status: ' . $statusLabel);
+        $sheet2->setCellValue('A3', 'Klik panah pada judul kolom untuk mengurutkan (kecil ke besar / besar ke kecil) atau menyaring data.');
+        $sheet2->getStyle('A3')->getFont()->setItalic(true)->setSize(9)->getColor()->setRGB('7A8A83');
 
-        $h2 = 4;
-        foreach (['No', 'Produk', 'Jumlah Terjual', 'Pendapatan'] as $i => $title) {
+        $h2 = 5;
+        foreach (['No', 'Produk', 'Jumlah Terjual', 'Pendapatan (Rp)'] as $i => $title) {
             $sheet2->setCellValue(chr(65 + $i) . $h2, $title);
         }
         $this->styleHeader($sheet2, "A$h2:D$h2");
+        $sheet2->getRowDimension($h2)->setRowHeight(22);
 
         $f2 = $h2 + 1;
         $r2 = $f2;
 
-        foreach ($products as $i => $product) {
-            $sheet2->setCellValue("A$r2", $i + 1);
+        foreach ($products as $product) {
+            $sheet2->setCellValue("A$r2", '=ROW()-ROW($A$' . $h2 . ')');
             $sheet2->setCellValue("B$r2", $product->product_name);
             $sheet2->setCellValue("C$r2", (int) $product->qty);
             $sheet2->setCellValue("D$r2", (float) $product->revenue);
@@ -304,22 +370,30 @@ class ReportController extends Controller
         if ($products->isEmpty()) {
             $sheet2->setCellValue("A$f2", 'Tidak ada produk terjual pada periode ini.');
             $sheet2->mergeCells("A$f2:D$f2");
+            $sheet2->getStyle("A$f2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $l2 = $f2;
         } else {
-            $sheet2->getStyle("D$f2:D$l2")->getNumberFormat()->setFormatCode($money);
+            $sheet2->getStyle("D$f2:D$l2")->getNumberFormat()->setFormatCode($raw);
             $sheet2->getStyle("A$f2:A$l2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet2->getStyle("C$f2:C$l2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle("D$f2:D$l2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
-            $t2 = $l2 + 1;
+            $t2 = $l2 + 2;
+            $sheet2->getRowDimension($l2 + 1)->setRowHeight(6);
             $sheet2->setCellValue("B$t2", 'TOTAL');
-            $sheet2->setCellValue("C$t2", "=SUM(C$f2:C$l2)");
-            $sheet2->setCellValue("D$t2", "=SUM(D$f2:D$l2)");
-            $sheet2->getStyle("D$t2")->getNumberFormat()->setFormatCode($money);
+            $sheet2->setCellValue("C$t2", "=SUBTOTAL(109,C$f2:C$l2)");
+            $sheet2->setCellValue("D$t2", "=SUBTOTAL(109,D$f2:D$l2)");
+            $sheet2->getStyle("D$t2")->getNumberFormat()->setFormatCode($raw);
+            $sheet2->getStyle("B$t2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet2->getStyle("C$t2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle("D$t2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet2->getStyle("A$t2:D$t2")->applyFromArray([
                 'font'    => ['bold' => true],
-                'borders' => ['top' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '3B5D50']]],
+                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COLOR_SOFT]],
+                'borders' => ['top' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => self::COLOR_PRIMARY]]],
             ]);
+
+            $sheet2->setAutoFilter("A$h2:D$l2");
         }
 
         $this->styleBody($sheet2, "A$f2:D$l2");
@@ -339,7 +413,7 @@ class ReportController extends Controller
     {
         $sheet->getStyle($range)->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '3B5D50']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::COLOR_PRIMARY]],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
     }
@@ -347,7 +421,8 @@ class ReportController extends Controller
     private function styleBody($sheet, string $range): void
     {
         $sheet->getStyle($range)->applyFromArray([
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E3E9E6']]],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => self::COLOR_BORDER]]],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         ]);
     }
 }

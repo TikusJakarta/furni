@@ -342,14 +342,14 @@ class AdminController extends Controller
         })->all();
 
         $subtotal = collect($items)->sum('subtotal');
-        
-        $tax = $subtotal * 0.12; 
+
+        $tax = $subtotal * 0.12;
 
         $protectionFee = $order->is_protected ? (float) ($order->protection_fee ?? ($subtotal * 0.005)) : 0;
 
         $shipping = (int) $order->shipping_cost;
         $total = $order->total_price;
-        
+
         $discount = max(0, ($subtotal + $tax + $shipping + $protectionFee) - $total);
 
         $isPaid = in_array($order->status, ['paid', 'packing', 'shipping', 'shipped', 'completed']);
@@ -615,6 +615,7 @@ class AdminController extends Controller
         $settings = Setting::pluck('value', 'key')->all();
 
         $logs = ActivityLog::query()
+            ->with('user') 
             ->when($request->filled('admin'), function ($query) use ($request) {
                 $query->where('user_id', $request->admin);
             })
