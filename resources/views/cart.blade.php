@@ -99,7 +99,7 @@
                                 </div>
                                 <div class="row mb-3">
                                     <div class="col-md-6">
-                                        <span class="text-black">Subtotal</span>
+                                        <span class="text-black">Total</span>
                                     </div>
                                     <div class="col-md-6 text-right">
                                         <strong class="text-black cart-subtotal">Rp {{ number_format($subtotal ?? 0, 0, ',', '.') }}</strong>
